@@ -460,10 +460,9 @@ export default function MinerCalculator({ initialData }: Props) {
               {t('subtitle')}
             </p>
           </div>
-          <div className="hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
+          <div className="flex flex-col items-end gap-2">
             {/* 语言和货币切换 */}
             <div className="flex items-center gap-2">
-              {/* 语言切换 */}
               <button
                 onClick={() => setLocale('en')}
                 className={`px-2 py-1 text-xs rounded ${
@@ -485,7 +484,7 @@ export default function MinerCalculator({ initialData }: Props) {
                 中文 / ￥
               </button>
             </div>
-            <div className="text-gray-500 text-xs text-right">
+            <div className="text-gray-500 text-xs text-right hidden sm:block">
               {t('storage')}: <span className="text-green-400 font-bold">{t('enabled')}</span>
               <br />
               {t('environment')}: Next.js + Vercel
