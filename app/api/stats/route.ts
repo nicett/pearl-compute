@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 // 内存缓存
 let cachedData: any = null;
 let lastFetchTime = 0;
