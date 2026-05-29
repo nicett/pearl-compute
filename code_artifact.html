@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>显卡挖矿收益与回本周期精算模型 - Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Microsoft YaHei', -apple-system, sans-serif; background-color: #f3f4f6; }
+        .input-group label { display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+        .input-group input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); transition: all 0.2s; }
+        .input-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .metric-card { background: white; padding: 1.25rem; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .metric-card:hover { transform: translateY(-2px); }
+        .metric-card.border-red-500 { border-top: 4px solid #ef4444; }
+        .metric-card.border-yellow-500 { border-top: 4px solid #f59e0b; }
+        .metric-card.border-green-500 { border-top: 4px solid #10b981; }
+        .metric-card.border-purple-500 { border-top: 4px solid #8b5cf6; }
+        .metric-title { font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem; font-weight: 500; }
+        .metric-value { font-size: 1.5rem; font-weight: 800; color: #111827; line-height: 1.2; }
+        .sync-btn { transition: all 0.2s; }
+        .sync-btn:active:not(:disabled) { transform: scale(0.98); }
+        .sync-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .highlight-flash { animation: flashGreen 1.5s ease-out; }
+        @keyframes flashGreen { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); background-color: #ecfdf5; } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); background-color: #ecfdf5; } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); background-color: white; } }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col">
+
+    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden flex-grow w-full">
+        <!-- Header (Polished with gradient) -->
+        <div class="bg-gradient-to-r from-gray-900 to-gray-800 text-white p-6 sm:px-8 border-b-4 border-blue-500">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight">显卡阵列挖矿与回本精算模型 <span class="text-blue-400 text-lg align-top">Pro</span></h1>
+                    <p class="text-gray-300 mt-2 text-sm font-medium">动态交互版 | 算力解耦 | 自动缓存 | 流血开机预警</p>
+                </div>
+                <div class="hidden sm:block text-gray-500 text-xs text-right">
+                    本地存储: <span class="text-green-400 font-bold">已启用</span><br>
+                    运行环境: Browser JS
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row">
+            <!-- Left Column: Inputs -->
+            <div class="w-full lg:w-1/3 p-6 sm:p-8 bg-gray-50 border-r border-gray-200">
+                
+                <!-- 硬件部署参数区 -->
+                <h2 class="text-md font-bold text-gray-800 mb-5 pb-2 border-b-2 border-gray-200 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                    硬件部署规模
+                </h2>
+                <div class="space-y-4 mb-10">
+                    <div class="input-group">
+                        <label>显卡数量 (张)</label>
+                        <input type="number" id="gpuCount" value="1" step="1" min="1" oninput="calculate()">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="input-group">
+                            <label>单卡买入价 (元)</label>
+                            <input type="number" id="cardPrice" value="5000" step="100" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>单卡残值 (元)</label>
+                            <input type="number" id="residualValue" value="3800" step="100" oninput="calculate()">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="input-group">
+                            <label>单卡功耗 (W)</label>
+                            <input type="number" id="powerCons" value="390" step="10" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>算力指标 (TH/s)</label>
+                            <input type="number" id="gpuHashrate" value="90" step="1" oninput="calculate()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 网络与市场参数区 -->
+                <h2 class="text-md font-bold text-gray-800 mb-5 pb-2 border-b-2 border-gray-200 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        网络与市场参数
+                    </div>
+                </h2>
+
+                <!-- 开发者提示：数据抓取按钮 -->
+                <div class="mb-5 relative">
+                    <button id="syncBtn" onclick="fetchRealtimeData()" class="sync-btn w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 px-4 border border-indigo-200 rounded-lg text-sm flex justify-center items-center shadow-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span id="syncBtnText">从 AlphaPool 同步实时数据</span>
+                    </button>
+                    <div class="flex justify-between items-center mt-1.5 px-1">
+                        <span id="syncStatus" class="text-xs text-red-500 hidden">❌ 获取失败 (可能因CORS拦截)</span>
+                        <span class="text-[10px] text-gray-400 font-mono" id="lastSyncTime">尚未同步</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="input-group relative">
+                        <div class="flex justify-between items-end mb-1">
+                            <label class="mb-0 text-indigo-700">每 1T 算力时产基准 (个)</label>
+                            <span class="text-xs text-indigo-500 font-bold bg-indigo-50 px-2 py-0.5 rounded" id="singleCardYieldHint">单卡时产: 0.000</span>
+                        </div>
+                        <input type="number" id="hashrateYield" value="0.003896" step="0.000001" oninput="calculate()">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="input-group">
+                            <label>当前币价 (USDT)</label>
+                            <input type="number" id="coinPrice" value="0.1800" step="0.001" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>矿池费率 (%)</label>
+                            <input type="number" id="poolFee" value="3.0" step="0.1" oninput="calculate()">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="input-group">
+                            <label>电价 (元/度)</label>
+                            <input type="number" id="electricityPrice" value="0.70" step="0.01" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>USDT 汇率</label>
+                            <input type="number" id="exchangeRate" value="6.80" step="0.01" oninput="calculate()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results & Charts -->
+            <div class="w-full lg:w-2/3 p-6 sm:p-8 flex flex-col bg-white">
+                
+                <!-- 顶层汇总状态条 -->
+                <div class="bg-gray-50 border border-gray-200 text-gray-600 text-sm px-5 py-3 rounded-lg mb-8 flex justify-between items-center shadow-sm">
+                    <div class="flex flex-col"><span class="text-xs text-gray-400 uppercase tracking-wider">总算力</span><strong class="text-gray-900 text-lg font-mono" id="sumHashrate">0 TH/s</strong></div>
+                    <div class="w-px h-8 bg-gray-300"></div>
+                    <div class="flex flex-col"><span class="text-xs text-gray-400 uppercase tracking-wider">总功耗</span><strong class="text-gray-900 text-lg font-mono" id="sumPower">0 kW</strong></div>
+                    <div class="w-px h-8 bg-gray-300"></div>
+                    <div class="flex flex-col text-right"><span class="text-xs text-gray-400 uppercase tracking-wider">总硬件投资</span><strong class="text-blue-600 text-lg font-mono" id="sumInvestment">￥0</strong></div>
+                </div>
+
+                <!-- Section 1: Financial Metrics -->
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center"><span class="bg-gray-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs mr-2">1</span> 阵列每日总收益流</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-10">
+                    <div class="metric-card border-red-500">
+                        <div class="metric-title">每日电费总支出</div>
+                        <div class="metric-value text-red-600" id="resElecCost">￥0.00</div>
+                    </div>
+                    <div class="metric-card border-yellow-500">
+                        <div class="metric-title">每日毛产出 (RMB)</div>
+                        <div class="metric-value" id="resGrossRMB">￥0.00</div>
+                        <div class="text-xs text-gray-400 mt-1 font-mono" id="resGrossUSDT">$0.00</div>
+                    </div>
+                    <div class="metric-card border-green-500 relative overflow-hidden">
+                        <div class="metric-title">每日净利润 (RMB)</div>
+                        <div class="metric-value" id="resNetRMB">￥0.00</div>
+                    </div>
+                    <div class="metric-card border-purple-500">
+                        <div class="metric-title">日线电费占比</div>
+                        <div class="metric-value" id="resCostRatio">0.00%</div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Payback Period -->
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center"><span class="bg-gray-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs mr-2">2</span> 风控与回本周期预测</h2>
+                
+                <!-- Warning Banner -->
+                <div id="warningBanner" class="hidden bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm mb-6 transition-all" role="alert">
+                    <div class="flex items-center">
+                        <svg class="h-6 w-6 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <p><strong class="font-bold">严重风险预警：</strong> 阵列处于 <span class="font-bold underline text-red-800">流血开机</span> 状态。每日挖矿产出已被高昂的电费击穿，建议立即停机止损。</p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-10 shadow-inner" id="paybackContainer">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                        <!-- Full Payback -->
+                        <div>
+                            <h3 class="font-bold text-gray-800 mb-1">【全额硬回本】模式</h3>
+                            <p class="text-xs text-gray-500 mb-4 border-b border-gray-200 pb-2">死扛策略：纯靠挖矿赚回总投资本金。</p>
+                            <div class="flex items-baseline space-x-2">
+                                <span class="text-4xl font-black text-blue-600 tracking-tighter" id="resFullDays">0</span>
+                                <span class="text-gray-600 font-bold">天</span>
+                                <span class="text-gray-400 text-sm ml-2 font-medium" id="resFullMonths">(约 0 个月)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Residual Payback -->
+                        <div class="relative md:pl-8 md:border-l border-gray-200">
+                            <h3 class="font-bold text-gray-800 mb-1 flex items-center">【硬件残值兜底】模式 <span class="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] rounded uppercase font-bold">推荐策略</span></h3>
+                            <p class="text-xs text-gray-500 mb-4 border-b border-gray-200 pb-2">防守策略：靠挖矿覆盖掉阵列总折旧敞口。</p>
+                            <div class="flex items-baseline space-x-2">
+                                <span class="text-4xl font-black text-green-600 tracking-tighter" id="resResidualDays">0</span>
+                                <span class="text-gray-600 font-bold">天</span>
+                                <span class="text-gray-400 text-sm ml-2 font-medium" id="resResidualMonths">(约 0 个月)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Charts -->
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center"><span class="bg-gray-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs mr-2">3</span> 长线投资回报可视化</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
+                    <!-- Pie Chart -->
+                    <div class="bg-white p-4 border border-gray-100 rounded-xl shadow-sm flex flex-col hover:shadow-md transition-shadow">
+                        <h3 class="text-sm font-bold text-center text-gray-600 mb-4">产出资金流向占比</h3>
+                        <div class="relative flex-grow min-h-[220px]">
+                            <canvas id="compositionChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Bar Chart -->
+                    <div class="bg-white p-4 border border-gray-100 rounded-xl shadow-sm flex flex-col hover:shadow-md transition-shadow">
+                        <h3 class="text-sm font-bold text-center text-gray-600 mb-4">长线累计净利润突破预测 (RMB)</h3>
+                        <div class="relative flex-grow min-h-[220px]">
+                            <canvas id="projectionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-gray-50 border-t border-gray-200 p-4 text-center text-xs text-gray-400">
+            <p>Developed for Professional GPU Mining Analysis & Arbitrage. Version 1.0.0 (Final)</p>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 配置管理：本地缓存控制 (LocalStorage)
+        // ==========================================
+        const INPUT_IDS = ['gpuCount', 'cardPrice', 'residualValue', 'powerCons', 'gpuHashrate', 'hashrateYield', 'coinPrice', 'poolFee', 'electricityPrice', 'exchangeRate'];
+
+        function loadSettings() {
+            try {
+                INPUT_IDS.forEach(id => {
+                    const savedVal = localStorage.getItem(`miner_calc_${id}`);
+                    if (savedVal !== null) {
+                        document.getElementById(id).value = savedVal;
+                    }
+                });
+            } catch (e) {
+                console.warn("读取本地缓存失败", e);
+            }
+        }
+
+        function saveSettings() {
+            try {
+                INPUT_IDS.forEach(id => {
+                    localStorage.setItem(`miner_calc_${id}`, document.getElementById(id).value);
+                });
+            } catch (e) {
+                // Ignore Safari private mode quota exceeded etc.
+            }
+        }
+
+        // ==========================================
+        // 开发者专区：实时抓取与计算引擎
+        // ==========================================
+        async function fetchRealtimeData() {
+            const btn = document.getElementById('syncBtn');
+            const btnText = document.getElementById('syncBtnText');
+            const statusLabel = document.getElementById('syncStatus');
+            const timeLabel = document.getElementById('lastSyncTime');
+            
+            const originalText = btnText.innerHTML;
+            btnText.innerHTML = '正在拉取链上数据...';
+            btn.disabled = true;
+            statusLabel.classList.add('hidden'); // Reset error label
+
+            try {
+                // 1. 通过本地代理请求 AlphaPool API（解决 CORS 问题）
+                const response = await fetch('/api/stats');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+
+                // 2. 提取并清洗数据（适配实际 API 结构）
+                const coinData = data.coins?.[0] || {};
+                const poolData = data.pool || {};
+                const price = coinData.price || null;
+                const priceSource = data.priceSource || 'unknown';
+
+                const blockReward = parseFloat(coinData.reward) || 2681.69;
+                const blockTimeSec = 124.77; // API 未返回此字段，使用默认值
+
+                let networkHashrateTH = 19.86 * 1000000;
+                if (coinData.network_hash) {
+                    // 解析 "19.17 EH/s" 格式
+                    const match = coinData.network_hash.match(/([\d.]+)\s*(EH|TH|GH|MH)/i);
+                    if (match) {
+                        const value = parseFloat(match[1]);
+                        const unit = match[2].toUpperCase();
+                        const multipliers = { 'EH': 1000000, 'TH': 1, 'GH': 0.001, 'MH': 0.000001 };
+                        networkHashrateTH = value * (multipliers[unit] || 1);
+                    }
+                }
+
+                // 推算核心逻辑
+                const blocksPerHour = 3600 / blockTimeSec;
+                const globalHourlyOutput = blocksPerHour * blockReward;
+                const yieldPerTH = globalHourlyOutput / networkHashrateTH;
+
+                // 3. 注入到 UI 并触发动画
+                if (yieldPerTH > 0 && isFinite(yieldPerTH)) {
+                    const yieldInput = document.getElementById('hashrateYield');
+                    yieldInput.value = yieldPerTH.toFixed(6);
+                    yieldInput.classList.remove('highlight-flash'); // reset
+                    void yieldInput.offsetWidth; // trigger reflow
+                    yieldInput.classList.add('highlight-flash');
+                }
+
+                if (price) {
+                    const priceInput = document.getElementById('coinPrice');
+                    priceInput.value = parseFloat(price).toFixed(4);
+                    priceInput.classList.remove('highlight-flash');
+                    void priceInput.offsetWidth;
+                    priceInput.classList.add('highlight-flash');
+                    console.log(`[Price] 获取成功: ${price} USDT (来源: ${priceSource})`);
+                } else {
+                    console.warn('[Price] API 未返回价格数据，保留手动输入值');
+                }
+
+                // 记录成功时间
+                const now = new Date();
+                timeLabel.innerText = `上次同步: ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+                
+                calculate(); // 触发页面数据重算
+
+            } catch (error) {
+                console.error('API Fetch Failed:', error);
+                statusLabel.classList.remove('hidden');
+            } finally {
+                btnText.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // UI 图表与本地计算逻辑
+        // ==========================================
+        let compChart, projChart;
+
+        function initCharts() {
+            Chart.defaults.font.family = "'Microsoft YaHei', sans-serif";
+            Chart.defaults.color = '#6b7280';
+            
+            const ctxComp = document.getElementById('compositionChart').getContext('2d');
+            compChart = new Chart(ctxComp, {
+                type: 'doughnut',
+                data: {
+                    labels: ['电费总支出', '纯净利润'],
+                    datasets: [{ 
+                        data: [0, 0], 
+                        backgroundColor: ['#ef4444', '#10b981'], 
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '65%',
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } } 
+                }
+            });
+
+            const ctxProj = document.getElementById('projectionChart').getContext('2d');
+            projChart = new Chart(ctxProj, {
+                type: 'bar',
+                data: {
+                    labels: ['30天', '90天', '180天', '365天'],
+                    datasets: [
+                        { label: '累计净利润', data: [0, 0, 0, 0], backgroundColor: 'rgba(59, 130, 246, 0.8)', borderRadius: 4, order: 2 },
+                        { label: '总折旧风险敞口', data: [0, 0, 0, 0], type: 'line', borderColor: '#ef4444', borderWidth: 2, borderDash: [4, 4], fill: false, pointRadius: 0, order: 1 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } } }
+                }
+            });
+        }
+
+        function calculate() {
+            saveSettings(); // 计算时自动保存配置
+
+            const gpuCount = parseInt(document.getElementById('gpuCount').value) || 0;
+            const cardPrice = parseFloat(document.getElementById('cardPrice').value) || 0;
+            const residualValue = parseFloat(document.getElementById('residualValue').value) || 0;
+            const powerCons = parseFloat(document.getElementById('powerCons').value) || 0;
+            const gpuHashrate = parseFloat(document.getElementById('gpuHashrate').value) || 0;
+            
+            const hashrateYield = parseFloat(document.getElementById('hashrateYield').value) || 0;
+            const coinPrice = parseFloat(document.getElementById('coinPrice').value) || 0;
+            const poolFee = parseFloat(document.getElementById('poolFee').value) || 0;
+            const electricityPrice = parseFloat(document.getElementById('electricityPrice').value) || 0;
+            const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 0;
+
+            const singleCardHourlyCoins = gpuHashrate * hashrateYield;
+            document.getElementById('singleCardYieldHint').innerText = `单卡时产: ${singleCardHourlyCoins.toFixed(4)}`;
+
+            const totalHashrate = gpuCount * gpuHashrate;
+            const totalPowerKW = (gpuCount * powerCons) / 1000;
+            const totalInvestment = gpuCount * cardPrice;
+            const totalResidual = gpuCount * residualValue;
+            
+            document.getElementById('sumHashrate').innerText = totalHashrate.toLocaleString() + ' TH/s';
+            document.getElementById('sumPower').innerText = totalPowerKW.toFixed(2) + ' kW';
+            document.getElementById('sumInvestment').innerText = '￥' + totalInvestment.toLocaleString();
+
+            const dailyElecCostRMB = totalPowerKW * 24 * electricityPrice;
+            const dailyGrossUSDT = totalHashrate * hashrateYield * 24 * (1 - poolFee / 100) * coinPrice;
+            const dailyGrossRMB = dailyGrossUSDT * exchangeRate;
+            const dailyNetRMB = dailyGrossRMB - dailyElecCostRMB;
+            
+            let costRatio = 0;
+            if (dailyGrossRMB > 0) costRatio = (dailyElecCostRMB / dailyGrossRMB) * 100;
+            else if (dailyGrossRMB === 0 && dailyElecCostRMB > 0) costRatio = 100;
+
+            document.getElementById('resElecCost').innerText = '￥' + dailyElecCostRMB.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('resGrossRMB').innerText = '￥' + dailyGrossRMB.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('resGrossUSDT').innerText = '($' + dailyGrossUSDT.toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4}) + ')';
+            
+            const elNetRMB = document.getElementById('resNetRMB');
+            elNetRMB.innerText = '￥' + dailyNetRMB.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            elNetRMB.className = dailyNetRMB > 0 ? 'metric-value text-green-600' : 'metric-value text-red-600';
+
+            const elCostRatio = document.getElementById('resCostRatio');
+            elCostRatio.innerText = costRatio.toFixed(2) + '%';
+            elCostRatio.className = costRatio >= 100 ? 'metric-value text-red-600' : 'metric-value';
+
+            const warningBanner = document.getElementById('warningBanner');
+            const paybackContainer = document.getElementById('paybackContainer');
+            const totalRiskExposure = totalInvestment - totalResidual;
+
+            if (dailyNetRMB <= 0) {
+                warningBanner.classList.remove('hidden');
+                paybackContainer.classList.add('opacity-30', 'pointer-events-none');
+                
+                document.getElementById('resFullDays').innerText = '-';
+                document.getElementById('resFullMonths').innerText = '';
+                document.getElementById('resResidualDays').innerText = '-';
+                document.getElementById('resResidualMonths').innerText = '';
+                
+                compChart.data.datasets[0].data = [dailyElecCostRMB, 0];
+                compChart.update();
+                
+                projChart.data.datasets[0].data = [dailyNetRMB*30, dailyNetRMB*90, dailyNetRMB*180, dailyNetRMB*365];
+                projChart.data.datasets[1].data = [totalRiskExposure, totalRiskExposure, totalRiskExposure, totalRiskExposure];
+                projChart.update();
+            } else {
+                warningBanner.classList.add('hidden');
+                paybackContainer.classList.remove('opacity-30', 'pointer-events-none');
+
+                const fullDays = totalInvestment / dailyNetRMB;
+                const fullMonths = fullDays / 30;
+                const resDays = Math.max(0, totalRiskExposure) / dailyNetRMB;
+                const resMonths = resDays / 30;
+
+                document.getElementById('resFullDays').innerText = fullDays.toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                document.getElementById('resFullMonths').innerText = `(约 ${fullMonths.toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} 个月)`;
+                document.getElementById('resResidualDays').innerText = resDays.toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                document.getElementById('resResidualMonths').innerText = `(约 ${resMonths.toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} 个月)`;
+
+                compChart.data.datasets[0].data = [dailyElecCostRMB, dailyNetRMB];
+                compChart.update();
+
+                projChart.data.datasets[0].data = [dailyNetRMB*30, dailyNetRMB*90, dailyNetRMB*180, dailyNetRMB*365];
+                projChart.data.datasets[1].data = [totalRiskExposure, totalRiskExposure, totalRiskExposure, totalRiskExposure];
+                projChart.update();
+            }
+        }
+
+        // 初始化加载链
+        window.onload = () => {
+            loadSettings(); // 1. 先读取本地缓存数据
+            initCharts();   // 2. 初始化空图表
+            calculate();    // 3. 运行首次计算并渲染图表
+        };
+    </script>
+</body>
+</html>
