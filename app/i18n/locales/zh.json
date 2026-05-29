@@ -27,10 +27,10 @@
   "totalHashrate": "总算力",
   "totalPower": "总功耗",
   "totalInvestment": "总硬件投资",
-  "dailyElecCost": "每日电费总支出",
+  "dailyElecCost": "每日电费",
   "dailyGross": "每日毛产出",
   "dailyNet": "每日净利润",
-  "costRatio": "日线电费占比",
+  "costRatio": "电费占比",
   "paybackTitle": "风控与回本周期预测",
   "fullPayback": "【全额硬回本】模式",
   "fullPaybackDesc": "死扛策略：纯靠挖矿赚回总投资本金。",
@@ -44,10 +44,12 @@
   "bleedingMessage": "阵列处于流血开机状态。每日挖矿产出已被高昂的电费击穿，建议立即停机止损。",
   "chartTitle": "长线投资回报可视化",
   "pieChart": "产出资金流向占比",
-  "barChart": "长线累计净利润突破预测",
+  "barChart": "长线累计净利润预测",
+  "cumulativeNet": "累计净利润",
+  "depreciationExposure": "总折旧风险敞口",
   "section1": "阵列每日总收益流",
   "section2": "风控与回本周期预测",
   "section3": "长线投资回报可视化",
   "loading": "正在加载实时数据...",
-  "footer": "Developed for Professional GPU Mining Analysis & Arbitrage. Version 2.0.0 (Next.js)"
+  "footer": "专业 GPU 挖矿分析与套利工具。版本 2.0.0"
 }

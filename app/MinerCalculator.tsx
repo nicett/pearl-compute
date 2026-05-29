@@ -139,14 +139,14 @@ export default function MinerCalculator({ initialData }: Props) {
         labels: [`30 ${t('days')}`, `90 ${t('days')}`, `180 ${t('days')}`, `365 ${t('days')}`],
         datasets: [
           {
-            label: t('dailyNet'),
+            label: t('cumulativeNet'),
             data: [0, 0, 0, 0],
             backgroundColor: 'rgba(59, 130, 246, 0.8)',
             borderRadius: 4,
             order: 2,
           },
           {
-            label: t('totalInvestment'),
+            label: t('depreciationExposure'),
             data: [0, 0, 0, 0],
             type: 'line',
             borderColor: '#ef4444',

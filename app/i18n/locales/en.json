@@ -45,9 +45,11 @@
   "chartTitle": "Long-term Investment Return Visualization",
   "pieChart": "Output Fund Flow Ratio",
   "barChart": "Long-term Cumulative Net Profit Forecast",
+  "cumulativeNet": "Cumulative Net Profit",
+  "depreciationExposure": "Total Depreciation Exposure",
   "section1": "Daily Total Revenue Flow",
   "section2": "Risk Control & Payback Period",
   "section3": "Long-term Investment Return",
   "loading": "Loading real-time data...",
-  "footer": "Developed for Professional GPU Mining Analysis & Arbitrage. Version 2.0.0 (Next.js)"
+  "footer": "Professional GPU Mining Analysis & Arbitrage Tool. Version 2.0.0"
 }
