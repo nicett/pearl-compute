@@ -264,10 +264,10 @@ export default function MinerCalculator({ initialData }: Props) {
     const costEfficiency = cardPrice > 0 ? gpuHashrate / cardPrice : 0;
 
     // 综合评分：几何均值归一化到 0-100
-    // 基准：RTX 4090 ≈ 能效比 0.23 TH/W, 性价比 0.018 TH/$ → 综合 65 分
+    // 基准：RTX 4090 ≈ 能效比 0.23 TH/W, 性价比 0.12 TH/$ → 综合 50 分
     const REF_POWER_EFF = 0.23;
-    const REF_COST_EFF = isUSD ? 0.018 : 0.018 / safeRate; // CNY 基准按汇率换算
-    const REF_SCORE = 65;
+    const REF_COST_EFF = isUSD ? 0.12 : 0.12 / safeRate; // CNY 基准按汇率换算
+    const REF_SCORE = 50;
 
     let compositeScore = 0;
     if (powerEfficiency > 0 && costEfficiency > 0) {
