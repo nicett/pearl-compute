@@ -41,6 +41,7 @@
   "effPeriod": "Electricity Period",
   "tcoElectricity": "Period Electricity",
   "effHigher": "Higher is better",
+  "effSingleCard": "Metrics below are based on single GPU parameters only, independent of GPU count.",
   "tipTotalHashrate": "GPU Hashrate × GPU Count",
   "tipTotalPower": "Power per Card × GPU Count",
   "tipTotalInvestment": "Card Price × GPU Count",

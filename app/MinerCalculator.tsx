@@ -596,16 +596,17 @@ export default function MinerCalculator({ initialData }: Props) {
 
           {/* 硬件效能分析 */}
           <div className="mb-8 p-4 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-1">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                 {t('efficiencyTitle')}
               </span>
               <span className="text-[10px] text-gray-400">{t('effHigher')}</span>
             </div>
-            <div className="grid grid-cols-3 gap-3 mb-3">
+            <p className="text-[10px] text-gray-400 mb-3">{t('effSingleCard')}</p>
+            <div className="grid grid-cols-3 gap-3 mb-3 items-stretch">
               {/* 性价比 */}
-              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100 flex flex-col justify-between">
-                <div className="min-h-[2.5rem] flex items-center justify-center">
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100">
+                <div className="relative h-[2.5rem] flex items-center justify-center mb-1">
                   <div className="text-[10px] text-gray-400 uppercase tracking-wider flex items-center justify-center gap-1">
                     {t('costEff')}
                     <svg className="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
@@ -616,16 +617,14 @@ export default function MinerCalculator({ initialData }: Props) {
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
                   </div>
                 </div>
-                <div>
-                  <div className="text-lg font-black text-indigo-700 font-mono">
-                    {results.costEff.toFixed(4)}
-                  </div>
-                  <div className="text-[10px] text-gray-400">TH/{currency}</div>
+                <div className="text-lg font-black text-indigo-700 font-mono">
+                  {results.costEff.toFixed(4)}
                 </div>
+                <div className="text-[10px] text-gray-400">TH/{currency}</div>
               </div>
               {/* 能效比 */}
-              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100 flex flex-col justify-between">
-                <div className="min-h-[2.5rem] flex items-center justify-center">
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100">
+                <div className="relative h-[2.5rem] flex items-center justify-center mb-1">
                   <div className="text-[10px] text-gray-400 uppercase tracking-wider flex items-center justify-center gap-1">
                     {t('powerEff')}
                     <svg className="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
@@ -636,17 +635,15 @@ export default function MinerCalculator({ initialData }: Props) {
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
                   </div>
                 </div>
-                <div>
-                  <div className="text-lg font-black text-indigo-700 font-mono">
-                    {results.powerEff.toFixed(3)}
-                  </div>
-                  <div className="text-[10px] text-gray-400">TH/W</div>
+                <div className="text-lg font-black text-indigo-700 font-mono">
+                  {results.powerEff.toFixed(3)}
                 </div>
+                <div className="text-[10px] text-gray-400">TH/W</div>
               </div>
               {/* 长期运营性价比 */}
-              <div className="group relative text-center p-2 bg-white rounded-lg border border-indigo-200 flex flex-col justify-between">
-                <div className="min-h-[2.5rem] flex items-center justify-center">
-                  <div className="text-[10px] text-indigo-500 uppercase tracking-wider font-bold flex items-center justify-center gap-1 leading-tight">
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-indigo-200">
+                <div className="relative h-[2.5rem] flex items-center justify-center mb-1">
+                  <div className="text-[9px] text-indigo-500 uppercase tracking-wider font-bold flex items-center justify-center gap-1 leading-tight">
                     {t('longTermEff')}
                     <svg className="w-3 h-3 text-indigo-300 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                   </div>
@@ -656,12 +653,10 @@ export default function MinerCalculator({ initialData }: Props) {
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
                   </div>
                 </div>
-                <div>
-                  <div className="text-lg font-black text-indigo-700 font-mono">
-                    {results.longTermEff.toFixed(4)}
-                  </div>
-                  <div className="text-[10px] text-gray-400">TH/{currency}</div>
+                <div className="text-lg font-black text-indigo-700 font-mono">
+                  {results.longTermEff.toFixed(4)}
                 </div>
+                <div className="text-[10px] text-gray-400">TH/{currency}</div>
               </div>
             </div>
             {/* 运行周期下拉框 */}

@@ -41,6 +41,7 @@
   "effPeriod": "电费周期",
   "tcoElectricity": "周期电费",
   "effHigher": "越高越好",
+  "effSingleCard": "以下指标仅基于单张显卡参数计算，与显卡数量无关。",
   "tipTotalHashrate": "单卡算力 × 显卡数量",
   "tipTotalPower": "单卡功耗 × 显卡数量",
   "tipTotalInvestment": "单卡买入价 × 显卡数量",
