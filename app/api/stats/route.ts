@@ -170,6 +170,12 @@ export async function GET() {
   try {
     const data = await getFreshData();
 
+    const headers = {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'CDN-Cache-Control': 'no-store',
+      'Cloudflare-CDN-Cache-Control': 'no-store',
+    };
+
     if (!data) {
       return NextResponse.json(
         {
@@ -178,11 +184,11 @@ export async function GET() {
             ? Math.floor(lastSuccessfulFetchTime / 1000)
             : null,
         },
-        { status: 502 }
+        { status: 502, headers }
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, { headers });
   } catch (error) {
     console.error('API route error:', error);
     return NextResponse.json(

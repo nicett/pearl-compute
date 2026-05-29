@@ -301,7 +301,7 @@ export default function MinerCalculator({ initialData }: Props) {
   // 从 API 同步数据（静默模式）
   const fetchRealtimeData = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch('/api/stats');
+      const response = await fetch(`/api/stats?t=${Date.now()}`);
 
       // 即使返回 502，也可能有缓存数据
       const data = await response.json();
@@ -385,19 +385,20 @@ export default function MinerCalculator({ initialData }: Props) {
   }, []);
 
   // 倒计时逻辑
+  const fetchingRef = useRef(false);
+
   useEffect(() => {
-    const timer = setInterval(async () => {
+    const timer = setInterval(() => {
       setCountdown((prev) => {
-        if (prev <= 1) {
-          // 倒计时到 0，发起请求
+        if (prev <= 1 && !fetchingRef.current) {
+          fetchingRef.current = true;
           fetchRealtimeData().then((success) => {
-            if (success) {
-              setCountdown(10); // 请求成功后重置倒计时
-            }
+            fetchingRef.current = false;
+            setCountdown(10);
           });
           return 0;
         }
-        return prev - 1;
+        return prev > 0 ? prev - 1 : 0;
       });
     }, 1000);
 
