@@ -66,6 +66,9 @@ export default function MinerCalculator({ initialData }: Props) {
     fullMonths: 0,
     resDays: 0,
     resMonths: 0,
+    powerEfficiency: 0,
+    costEfficiency: 0,
+    compositeScore: 0,
   });
 
   // 从本地存储加载设置
@@ -253,6 +256,27 @@ export default function MinerCalculator({ initialData }: Props) {
       resMonths = resDays / 30;
     }
 
+    // 评分计算
+    // 能效比：每瓦算力 (TH/W)
+    const powerEfficiency = powerCons > 0 ? gpuHashrate / powerCons : 0;
+
+    // 性价比：每货币单位算力 (TH/$ 或 TH/¥)
+    const costEfficiency = cardPrice > 0 ? gpuHashrate / cardPrice : 0;
+
+    // 综合评分：几何均值归一化到 0-100
+    // 基准：RTX 4090 ≈ 能效比 0.23 TH/W, 性价比 0.018 TH/$ → 综合 65 分
+    const REF_POWER_EFF = 0.23;
+    const REF_COST_EFF = isUSD ? 0.018 : 0.018 * safeRate; // CNY 基准按汇率换算
+    const REF_SCORE = 65;
+
+    let compositeScore = 0;
+    if (powerEfficiency > 0 && costEfficiency > 0) {
+      const peRatio = powerEfficiency / REF_POWER_EFF;
+      const ceRatio = costEfficiency / REF_COST_EFF;
+      compositeScore = Math.sqrt(peRatio * ceRatio) * REF_SCORE;
+      compositeScore = Math.min(100, Math.max(0, compositeScore));
+    }
+
     setResults({
       singleCardHourlyCoins,
       totalHashrate,
@@ -268,6 +292,9 @@ export default function MinerCalculator({ initialData }: Props) {
       fullMonths,
       resDays,
       resMonths,
+      powerEfficiency,
+      costEfficiency,
+      compositeScore,
     });
 
     // 更新图表
@@ -578,6 +605,54 @@ export default function MinerCalculator({ initialData }: Props) {
                   step="1"
                   onChange={(e) => handleInputChange('gpuHashrate', e.target.value)}
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* 硬件评分区 */}
+          <div className="mb-8 p-4 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                {t('compositeScore')}
+              </span>
+              <span className={`text-2xl font-black ${
+                results.compositeScore >= 70 ? 'text-green-600' :
+                results.compositeScore >= 40 ? 'text-yellow-600' :
+                'text-red-600'
+              }`}>
+                {results.compositeScore.toFixed(0)}
+                <span className="text-sm ml-1">/ 100</span>
+              </span>
+            </div>
+            {/* 评分进度条 */}
+            <div className="w-full h-2 bg-gray-200 rounded-full mb-3 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  results.compositeScore >= 70 ? 'bg-green-500' :
+                  results.compositeScore >= 40 ? 'bg-yellow-500' :
+                  'bg-red-500'
+                }`}
+                style={{ width: `${Math.min(100, results.compositeScore)}%` }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                  {t('powerEfficiency')}
+                </div>
+                <div className="text-lg font-bold text-indigo-700 font-mono">
+                  {results.powerEfficiency.toFixed(3)}
+                </div>
+                <div className="text-[10px] text-gray-400">{t('powerEfficiencyUnit')}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                  {t('costEfficiency')}
+                </div>
+                <div className="text-lg font-bold text-indigo-700 font-mono">
+                  {results.costEfficiency.toFixed(4)}
+                </div>
+                <div className="text-[10px] text-gray-400">{t('costEfficiencyUnit')}</div>
               </div>
             </div>
           </div>
