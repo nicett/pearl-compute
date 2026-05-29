@@ -39,7 +39,7 @@ export default function MinerCalculator({ initialData }: Props) {
   });
 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('success');
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [lastSyncTs, setLastSyncTs] = useState<number | null>(null);
   const [priceSource, setPriceSource] = useState<string | null>(initialData.priceSource);
   const [countdown, setCountdown] = useState(10);
   const [isStale, setIsStale] = useState(false);
@@ -311,7 +311,7 @@ export default function MinerCalculator({ initialData }: Props) {
         console.warn('API returned error:', data.error);
         // 如果有最后同步时间（Unix 时间戳），显示它
         if (data.lastSuccessfulFetchTime) {
-          setLastSyncTime(formatSyncTime(data.lastSuccessfulFetchTime));
+          setLastSyncTs(data.lastSuccessfulFetchTime);
         }
         setSyncStatus('error');
         setIsStale(true);
@@ -325,7 +325,7 @@ export default function MinerCalculator({ initialData }: Props) {
       const price = coinData.price || null;
       const source = data.priceSource || 'unknown';
       const exchangeRate = data.exchangeRate || null;
-      const lastSyncTs = data.lastSyncTime || null;
+      const lastSyncTsNew = data.lastSyncTime || null;
 
       // 计算每 TH 时产
       const blockReward = parseFloat(coinData.reward) || 2681.69;
@@ -371,8 +371,8 @@ export default function MinerCalculator({ initialData }: Props) {
       }
 
       // 显示后端同步时间（Unix 时间戳，秒）
-      if (lastSyncTs) {
-        setLastSyncTime(formatSyncTime(lastSyncTs));
+      if (lastSyncTsNew) {
+        setLastSyncTs(lastSyncTsNew);
       }
 
       setSyncStatus('success');
@@ -404,11 +404,11 @@ export default function MinerCalculator({ initialData }: Props) {
     return () => clearInterval(timer);
   }, [fetchRealtimeData]);
 
-  // 格式化 Unix 时间戳为本地时间显示
+  // 从 Unix 时间戳计算本地时间显示（每次渲染都重新计算）
   const formatSyncTime = (unixSec: number) => {
     const date = new Date(unixSec * 1000);
-    const now = new Date();
-    const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+    const now = Date.now();
+    const diffSec = Math.floor((now - date.getTime()) / 1000);
     const diffMin = Math.floor(diffSec / 60);
     const diffHour = Math.floor(diffMin / 60);
 
@@ -419,6 +419,7 @@ export default function MinerCalculator({ initialData }: Props) {
       hour12: false,
     });
 
+    if (diffSec < 0) return timeStr;
     if (diffSec < 60) return `${timeStr} (${diffSec}s ago)`;
     if (diffMin < 60) return `${timeStr} (${diffMin}m ago)`;
     if (diffHour < 24) return `${timeStr} (${diffHour}h ago)`;
@@ -624,7 +625,7 @@ export default function MinerCalculator({ initialData }: Props) {
                 </span>
               )}
               <span className="text-[10px] text-gray-400 font-mono">
-                {lastSyncTime ? `${t('lastSync')}: ${lastSyncTime}` : t('notSynced')}
+                {lastSyncTs ? `${t('lastSync')}: ${formatSyncTime(lastSyncTs)}` : t('notSynced')}
               </span>
             </div>
           </div>
