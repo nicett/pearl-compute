@@ -50,8 +50,8 @@ export default function MinerCalculator({ initialData }: Props) {
   const compChartInstance = useRef<Chart | null>(null);
   const projChartInstance = useRef<Chart | null>(null);
 
-  // TCO 运行周期选项
-  const tcoPeriods = [
+  // 效能分析 - 运行周期选项
+  const effPeriods = [
     { label: '1天', hours: 24 },
     { label: '3天', hours: 72 },
     { label: '1周', hours: 168 },
@@ -60,7 +60,7 @@ export default function MinerCalculator({ initialData }: Props) {
     { label: '6个月', hours: 4320 },
     { label: '1年', hours: 8760 },
   ];
-  const [tcoPeriodIndex, setTcoPeriodIndex] = useState(4); // 默认 3 个月
+  const [effPeriodIndex, setEffPeriodIndex] = useState(4); // 默认 3 个月
 
   // 计算结果状态
   const [results, setResults] = useState({
@@ -78,9 +78,10 @@ export default function MinerCalculator({ initialData }: Props) {
     fullMonths: 0,
     resDays: 0,
     resMonths: 0,
-    tcoCost: 0,
-    tcoHardware: 0,
-    tcoElectricity: 0,
+    costEff: 0,
+    powerEff: 0,
+    longTermEff: 0,
+    longTermElecCost: 0,
   });
 
   // 从本地存储加载设置
@@ -268,12 +269,19 @@ export default function MinerCalculator({ initialData }: Props) {
       resMonths = resDays / 30;
     }
 
-    // TCO 计算
-    const totalHours = tcoPeriods[tcoPeriodIndex].hours;
+    // 效能分析
+    // 1. 性价比：算力 / 价格 (TH/货币，越高越好)
+    const costEff = cardPrice > 0 ? gpuHashrate / cardPrice : 0;
+
+    // 2. 能效比：算力 / 功耗 (TH/W，越高越好)
+    const powerEff = powerCons > 0 ? gpuHashrate / powerCons : 0;
+
+    // 3. 长期运营性价比：算力 / (采购价 + 周期电费)
+    const totalHours = effPeriods[effPeriodIndex].hours;
     const powerKW = powerCons / 1000;
-    const tcoHardware = cardPrice; // 单卡采购成本
-    const tcoElectricity = powerKW * totalHours * elecPrice; // 周期内电费
-    const tcoCost = gpuHashrate > 0 ? (tcoHardware + tcoElectricity) / gpuHashrate : 0;
+    const longTermElecCost = powerKW * totalHours * elecPrice;
+    const longTermTotal = cardPrice + longTermElecCost;
+    const longTermEff = longTermTotal > 0 ? gpuHashrate / longTermTotal : 0;
 
     setResults({
       singleCardHourlyCoins,
@@ -290,9 +298,10 @@ export default function MinerCalculator({ initialData }: Props) {
       fullMonths,
       resDays,
       resMonths,
-      tcoCost,
-      tcoHardware,
-      tcoElectricity,
+      costEff,
+      powerEff,
+      longTermEff,
+      longTermElecCost,
     });
 
     // 更新图表
@@ -329,7 +338,7 @@ export default function MinerCalculator({ initialData }: Props) {
       ];
       projChartInstance.current.update();
     }
-  }, [inputs, saveSettings, tcoPeriodIndex]);
+  }, [inputs, saveSettings, effPeriodIndex]);
 
   // 处理输入变化
   const handleInputChange = (field: string, value: string) => {
@@ -607,26 +616,54 @@ export default function MinerCalculator({ initialData }: Props) {
             </div>
           </div>
 
-          {/* TCO 综合单点成本 */}
+          {/* 硬件效能分析 */}
           <div className="mb-8 p-4 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                {t('tcoTitle')}
+                {t('efficiencyTitle')}
               </span>
-              <span className="text-2xl font-black text-indigo-700 font-mono">
-                {formatCurrency(results.tcoCost, 2)}
-                <span className="text-xs text-gray-400 ml-1">{t('tcoUnit')}</span>
-              </span>
+              <span className="text-[10px] text-gray-400">{t('effHigher')}</span>
             </div>
-            <p className="text-[10px] text-gray-400 mb-3">{t('tcoDesc')}</p>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              {/* 性价比 */}
+              <div className="text-center p-2 bg-white rounded-lg border border-gray-100">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                  {t('costEff')}
+                </div>
+                <div className="text-lg font-black text-indigo-700 font-mono">
+                  {results.costEff.toFixed(4)}
+                </div>
+                <div className="text-[10px] text-gray-400">TH/{currency}</div>
+              </div>
+              {/* 能效比 */}
+              <div className="text-center p-2 bg-white rounded-lg border border-gray-100">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                  {t('powerEff')}
+                </div>
+                <div className="text-lg font-black text-indigo-700 font-mono">
+                  {results.powerEff.toFixed(3)}
+                </div>
+                <div className="text-[10px] text-gray-400">TH/W</div>
+              </div>
+              {/* 长期运营性价比 */}
+              <div className="text-center p-2 bg-white rounded-lg border border-indigo-200 col-span-1">
+                <div className="text-[10px] text-indigo-500 uppercase tracking-wider mb-1 font-bold">
+                  {t('longTermEff')}
+                </div>
+                <div className="text-lg font-black text-indigo-700 font-mono">
+                  {results.longTermEff.toFixed(4)}
+                </div>
+                <div className="text-[10px] text-gray-400">TH/{currency}</div>
+              </div>
+            </div>
             {/* 运行周期选择 */}
-            <div className="flex flex-wrap gap-1 mb-3">
-              {tcoPeriods.map((p, i) => (
+            <div className="flex flex-wrap gap-1 mb-2 justify-center">
+              {effPeriods.map((p, i) => (
                 <button
                   key={p.label}
-                  onClick={() => setTcoPeriodIndex(i)}
+                  onClick={() => setEffPeriodIndex(i)}
                   className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${
-                    tcoPeriodIndex === i
+                    effPeriodIndex === i
                       ? 'bg-indigo-600 text-white border-indigo-600'
                       : 'bg-white text-gray-500 border-gray-300 hover:border-indigo-400'
                   }`}
@@ -635,24 +672,9 @@ export default function MinerCalculator({ initialData }: Props) {
                 </button>
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div>
-                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
-                  {t('tcoHardware')}
-                </div>
-                <div className="text-sm font-bold text-gray-700 font-mono">
-                  {formatCurrency(results.tcoHardware)}
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
-                  {t('tcoElectricity')} ({tcoPeriods[tcoPeriodIndex].label})
-                </div>
-                <div className="text-sm font-bold text-gray-700 font-mono">
-                  {formatCurrency(results.tcoElectricity)}
-                </div>
-              </div>
-            </div>
+            <p className="text-[10px] text-gray-400 text-center">
+              {t('longTermEffDesc')} | {t('effPeriod')}: {effPeriods[effPeriodIndex].label} ({t('tcoElectricity')}: {formatCurrency(results.longTermElecCost)})
+            </p>
           </div>
 
           {/* 网络与市场参数区 */}
