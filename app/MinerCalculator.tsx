@@ -306,20 +306,7 @@ export default function MinerCalculator({ initialData }: Props) {
     }
 
     if (projChartInstance.current) {
-      const projData =
-        dailyNet <= 0
-          ? [
-              dailyNet * 30,
-              dailyNet * 90,
-              dailyNet * 180,
-              dailyNet * 365,
-            ]
-          : [
-              dailyNet * 30,
-              dailyNet * 90,
-              dailyNet * 180,
-              dailyNet * 365,
-            ];
+      const projData = [dailyNet * 30, dailyNet * 90, dailyNet * 180, dailyNet * 365];
       projChartInstance.current.data.datasets[0].data = projData;
       projChartInstance.current.data.datasets[1].data = [
         totalRiskExposure,
@@ -460,9 +447,9 @@ export default function MinerCalculator({ initialData }: Props) {
     });
 
     if (diffSec < 0) return timeStr;
-    if (diffSec < 60) return `${timeStr} (${diffSec}s ago)`;
-    if (diffMin < 60) return `${timeStr} (${diffMin}m ago)`;
-    if (diffHour < 24) return `${timeStr} (${diffHour}h ago)`;
+    if (diffSec < 60) return `${timeStr} (${diffSec}${t('agoS')})`;
+    if (diffMin < 60) return `${timeStr} (${diffMin}${t('agoM')})`;
+    if (diffHour < 24) return `${timeStr} (${diffHour}${t('agoH')})`;
     return date.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
       month: 'short',
       day: 'numeric',
@@ -528,7 +515,7 @@ export default function MinerCalculator({ initialData }: Props) {
             <div className="text-gray-500 text-xs text-right hidden sm:block">
               {t('storage')}: <span className="text-green-400 font-bold">{t('enabled')}</span>
               <br />
-              {t('environment')}: Next.js + Vercel
+              {t('environment')}: Next.js + Cloudflare Pages
             </div>
           </div>
         </div>
@@ -617,52 +604,64 @@ export default function MinerCalculator({ initialData }: Props) {
             </div>
             <div className="grid grid-cols-3 gap-3 mb-3">
               {/* 性价比 */}
-              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100">
-                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
-                  {t('costEff')}
-                  <svg className="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100 flex flex-col justify-between">
+                <div className="min-h-[2.5rem] flex items-center justify-center">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider flex items-center justify-center gap-1">
+                    {t('costEff')}
+                    <svg className="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  </div>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    {t('gpuHashrate')} ÷ {t('cardPrice')}
+                    <br />{t('costEffDesc')}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                  </div>
                 </div>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                  {t('gpuHashrate')} ÷ {t('cardPrice')}
-                  <br />{t('costEffDesc')}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                <div>
+                  <div className="text-lg font-black text-indigo-700 font-mono">
+                    {results.costEff.toFixed(4)}
+                  </div>
+                  <div className="text-[10px] text-gray-400">TH/{currency}</div>
                 </div>
-                <div className="text-lg font-black text-indigo-700 font-mono">
-                  {results.costEff.toFixed(4)}
-                </div>
-                <div className="text-[10px] text-gray-400">TH/{currency}</div>
               </div>
               {/* 能效比 */}
-              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100">
-                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
-                  {t('powerEff')}
-                  <svg className="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100 flex flex-col justify-between">
+                <div className="min-h-[2.5rem] flex items-center justify-center">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider flex items-center justify-center gap-1">
+                    {t('powerEff')}
+                    <svg className="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  </div>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    {t('gpuHashrate')} ÷ {t('powerCons')}
+                    <br />{t('powerEffDesc')}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                  </div>
                 </div>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                  {t('gpuHashrate')} ÷ {t('powerCons')}
-                  <br />{t('powerEffDesc')}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                <div>
+                  <div className="text-lg font-black text-indigo-700 font-mono">
+                    {results.powerEff.toFixed(3)}
+                  </div>
+                  <div className="text-[10px] text-gray-400">TH/W</div>
                 </div>
-                <div className="text-lg font-black text-indigo-700 font-mono">
-                  {results.powerEff.toFixed(3)}
-                </div>
-                <div className="text-[10px] text-gray-400">TH/W</div>
               </div>
               {/* 长期运营性价比 */}
-              <div className="group relative text-center p-2 bg-white rounded-lg border border-indigo-200">
-                <div className="text-[10px] text-indigo-500 uppercase tracking-wider mb-1 font-bold flex items-center justify-center gap-1">
-                  {t('longTermEff')}
-                  <svg className="w-3 h-3 text-indigo-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-indigo-200 flex flex-col justify-between">
+                <div className="min-h-[2.5rem] flex items-center justify-center">
+                  <div className="text-[10px] text-indigo-500 uppercase tracking-wider font-bold flex items-center justify-center gap-1 leading-tight">
+                    {t('longTermEff')}
+                    <svg className="w-3 h-3 text-indigo-300 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  </div>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    {t('gpuHashrate')} ÷ ({t('cardPrice')} + {t('powerCons')}/1000 × {effMonths}{t('months')}×30×24 × {t('electricityPrice')})
+                    <br />{t('longTermEffDesc')}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                  </div>
                 </div>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                  {t('gpuHashrate')} ÷ ({t('cardPrice')} + {t('powerCons')}/1000 × {effMonths}{t('months')}×30×24 × {t('electricityPrice')})
-                  <br />{t('longTermEffDesc')}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                <div>
+                  <div className="text-lg font-black text-indigo-700 font-mono">
+                    {results.longTermEff.toFixed(4)}
+                  </div>
+                  <div className="text-[10px] text-gray-400">TH/{currency}</div>
                 </div>
-                <div className="text-lg font-black text-indigo-700 font-mono">
-                  {results.longTermEff.toFixed(4)}
-                </div>
-                <div className="text-[10px] text-gray-400">TH/{currency}</div>
               </div>
             </div>
             {/* 运行周期下拉框 */}
@@ -818,28 +817,43 @@ export default function MinerCalculator({ initialData }: Props) {
         <div className="w-full lg:w-2/3 p-6 sm:p-8 flex flex-col bg-white">
           {/* 顶层汇总状态条 */}
           <div className="bg-gray-50 border border-gray-200 text-gray-600 text-sm px-5 py-3 rounded-lg mb-8 flex justify-between items-center shadow-sm">
-            <div className="flex flex-col">
-              <span className="text-xs text-gray-400 uppercase tracking-wider">
+            <div className="group relative flex flex-col">
+              <span className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 {t('totalHashrate')}
+                <svg className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
               </span>
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                {t('tipTotalHashrate')}
+                <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+              </div>
               <strong className="text-gray-900 text-lg font-mono">
                 {results.totalHashrate.toLocaleString()} TH/s
               </strong>
             </div>
             <div className="w-px h-8 bg-gray-300" />
-            <div className="flex flex-col">
-              <span className="text-xs text-gray-400 uppercase tracking-wider">
+            <div className="group relative flex flex-col">
+              <span className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 {t('totalPower')}
+                <svg className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
               </span>
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                {t('tipTotalPower')}
+                <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+              </div>
               <strong className="text-gray-900 text-lg font-mono">
                 {results.totalPowerKW.toFixed(2)} kW
               </strong>
             </div>
             <div className="w-px h-8 bg-gray-300" />
-            <div className="flex flex-col text-right">
-              <span className="text-xs text-gray-400 uppercase tracking-wider">
+            <div className="group relative flex flex-col text-right">
+              <span className="text-xs text-gray-400 uppercase tracking-wider flex items-center justify-end gap-1">
                 {t('totalInvestment')}
+                <svg className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
               </span>
+              <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                {t('tipTotalInvestment')}
+                <div className="absolute top-full right-4 border-4 border-transparent border-t-gray-800" />
+              </div>
               <strong className="text-blue-600 text-lg font-mono">
                 {formatCurrency(results.totalInvestment)}
               </strong>
@@ -854,13 +868,27 @@ export default function MinerCalculator({ initialData }: Props) {
             {t('section1')}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-10">
-            <div className="metric-card border-red-500">
+            <div className="group metric-card border-red-500 relative">
+              <div className="absolute top-2 right-2">
+                <svg className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {t('tipDailyElecCost')}
+                  <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800" />
+                </div>
+              </div>
               <div className="metric-title">{t('dailyElecCost')}</div>
               <div className="metric-value text-red-600">
                 {formatCurrency(results.dailyElecCostRMB)}
               </div>
             </div>
-            <div className="metric-card border-yellow-500">
+            <div className="group metric-card border-yellow-500 relative">
+              <div className="absolute top-2 right-2">
+                <svg className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {t('tipDailyGross')}
+                  <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800" />
+                </div>
+              </div>
               <div className="metric-title">{t('dailyGross')}</div>
               <div className="metric-value">
                 {formatCurrency(results.dailyGrossRMB)}
@@ -871,7 +899,14 @@ export default function MinerCalculator({ initialData }: Props) {
                 </div>
               )}
             </div>
-            <div className="metric-card border-green-500 relative overflow-hidden">
+            <div className="group metric-card border-green-500 relative overflow-hidden">
+              <div className="absolute top-2 right-2">
+                <svg className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {t('tipDailyNet')}
+                  <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800" />
+                </div>
+              </div>
               <div className="metric-title">{t('dailyNet')}</div>
               <div
                 className={`metric-value ${
@@ -881,7 +916,14 @@ export default function MinerCalculator({ initialData }: Props) {
                 {formatCurrency(results.dailyNetRMB)}
               </div>
             </div>
-            <div className="metric-card border-purple-500">
+            <div className="group metric-card border-purple-500 relative">
+              <div className="absolute top-2 right-2">
+                <svg className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {t('tipCostRatio')}
+                  <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800" />
+                </div>
+              </div>
               <div className="metric-title">{t('costRatio')}</div>
               <div
                 className={`metric-value ${
@@ -936,9 +978,14 @@ export default function MinerCalculator({ initialData }: Props) {
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               {/* Full Payback */}
-              <div>
-                <h3 className="font-bold text-gray-800 mb-1">
+              <div className="group relative">
+                <h3 className="font-bold text-gray-800 mb-1 flex items-center gap-1">
                   {t('fullPayback')}
+                  <svg className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    {t('tipFullPayback')}
+                    <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                  </div>
                 </h3>
                 <p className="text-xs text-gray-500 mb-4 border-b border-gray-200 pb-2">
                   {t('fullPaybackDesc')}
@@ -957,12 +1004,17 @@ export default function MinerCalculator({ initialData }: Props) {
               </div>
 
               {/* Residual Payback */}
-              <div className="relative md:pl-8 md:border-l border-gray-200">
-                <h3 className="font-bold text-gray-800 mb-1 flex items-center">
+              <div className="group relative md:pl-8 md:border-l border-gray-200">
+                <h3 className="font-bold text-gray-800 mb-1 flex items-center gap-1">
                   {t('residualPayback')}{' '}
                   <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] rounded uppercase font-bold">
                     {t('recommended')}
                   </span>
+                  <svg className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                  <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    {t('tipResPayback')}
+                    <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800" />
+                  </div>
                 </h3>
                 <p className="text-xs text-gray-500 mb-4 border-b border-gray-200 pb-2">
                   {t('residualPaybackDesc')}

@@ -72,34 +72,3 @@ body {
   line-height: 1.2;
 }
 
-.sync-btn {
-  transition: all 0.2s;
-}
-
-.sync-btn:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.sync-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.highlight-flash {
-  animation: flashGreen 1.5s ease-out;
-}
-
-@keyframes flashGreen {
-  0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-    background-color: #ecfdf5;
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-    background-color: #ecfdf5;
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    background-color: white;
-  }
-}
