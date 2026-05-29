@@ -39,6 +39,7 @@
   "longTermEff": "长期运营性价比",
   "longTermEffDesc": "算力 ÷ (采购价 + 周期电费)",
   "effPeriod": "电费周期",
+  "tcoElectricity": "周期电费",
   "effHigher": "越高越好",
   "paybackTitle": "风控与回本周期预测",
   "fullPayback": "【全额硬回本】模式",

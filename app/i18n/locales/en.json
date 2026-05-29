@@ -39,6 +39,7 @@
   "longTermEff": "Long-term Efficiency",
   "longTermEffDesc": "Hashrate / (price + period electricity)",
   "effPeriod": "Electricity Period",
+  "tcoElectricity": "Period Electricity",
   "effHigher": "Higher is better",
   "paybackTitle": "Risk Control & Payback Period Prediction",
   "fullPayback": "Full Payback Mode",
