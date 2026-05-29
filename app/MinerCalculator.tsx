@@ -181,6 +181,20 @@ export default function MinerCalculator({ initialData }: Props) {
     };
   }, []);
 
+  // 语言切换时更新图表标签
+  useEffect(() => {
+    if (compChartInstance.current) {
+      compChartInstance.current.data.labels = [t('dailyElecCost'), t('dailyNet')];
+      compChartInstance.current.update('none');
+    }
+    if (projChartInstance.current) {
+      projChartInstance.current.data.labels = [`30 ${t('days')}`, `90 ${t('days')}`, `180 ${t('days')}`, `365 ${t('days')}`];
+      projChartInstance.current.data.datasets[0].label = t('cumulativeNet');
+      projChartInstance.current.data.datasets[1].label = t('depreciationExposure');
+      projChartInstance.current.update('none');
+    }
+  }, [t]);
+
   // 计算逻辑
   useEffect(() => {
     saveSettings();
