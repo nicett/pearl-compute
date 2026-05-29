@@ -50,17 +50,8 @@ export default function MinerCalculator({ initialData }: Props) {
   const compChartInstance = useRef<Chart | null>(null);
   const projChartInstance = useRef<Chart | null>(null);
 
-  // 效能分析 - 运行周期选项
-  const effPeriods = [
-    { label: '1天', hours: 24 },
-    { label: '3天', hours: 72 },
-    { label: '1周', hours: 168 },
-    { label: '1个月', hours: 720 },
-    { label: '3个月', hours: 2160 },
-    { label: '6个月', hours: 4320 },
-    { label: '1年', hours: 8760 },
-  ];
-  const [effPeriodIndex, setEffPeriodIndex] = useState(4); // 默认 3 个月
+  // 效能分析 - 运行周期（月）
+  const [effMonths, setEffMonths] = useState(6); // 默认 6 个月
 
   // 计算结果状态
   const [results, setResults] = useState({
@@ -277,7 +268,7 @@ export default function MinerCalculator({ initialData }: Props) {
     const powerEff = powerCons > 0 ? gpuHashrate / powerCons : 0;
 
     // 3. 长期运营性价比：算力 / (采购价 + 周期电费)
-    const totalHours = effPeriods[effPeriodIndex].hours;
+    const totalHours = effMonths * 30 * 24; // 月 → 小时
     const powerKW = powerCons / 1000;
     const longTermElecCost = powerKW * totalHours * elecPrice;
     const longTermTotal = cardPrice + longTermElecCost;
@@ -338,7 +329,7 @@ export default function MinerCalculator({ initialData }: Props) {
       ];
       projChartInstance.current.update();
     }
-  }, [inputs, saveSettings, effPeriodIndex]);
+  }, [inputs, saveSettings, effMonths]);
 
   // 处理输入变化
   const handleInputChange = (field: string, value: string) => {
@@ -626,9 +617,15 @@ export default function MinerCalculator({ initialData }: Props) {
             </div>
             <div className="grid grid-cols-3 gap-3 mb-3">
               {/* 性价比 */}
-              <div className="text-center p-2 bg-white rounded-lg border border-gray-100">
-                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
                   {t('costEff')}
+                  <svg className="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                </div>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {t('gpuHashrate')} ÷ {t('cardPrice')}
+                  <br />{t('costEffDesc')}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
                 </div>
                 <div className="text-lg font-black text-indigo-700 font-mono">
                   {results.costEff.toFixed(4)}
@@ -636,9 +633,15 @@ export default function MinerCalculator({ initialData }: Props) {
                 <div className="text-[10px] text-gray-400">TH/{currency}</div>
               </div>
               {/* 能效比 */}
-              <div className="text-center p-2 bg-white rounded-lg border border-gray-100">
-                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-gray-100">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
                   {t('powerEff')}
+                  <svg className="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                </div>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {t('gpuHashrate')} ÷ {t('powerCons')}
+                  <br />{t('powerEffDesc')}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
                 </div>
                 <div className="text-lg font-black text-indigo-700 font-mono">
                   {results.powerEff.toFixed(3)}
@@ -646,9 +649,15 @@ export default function MinerCalculator({ initialData }: Props) {
                 <div className="text-[10px] text-gray-400">TH/W</div>
               </div>
               {/* 长期运营性价比 */}
-              <div className="text-center p-2 bg-white rounded-lg border border-indigo-200 col-span-1">
-                <div className="text-[10px] text-indigo-500 uppercase tracking-wider mb-1 font-bold">
+              <div className="group relative text-center p-2 bg-white rounded-lg border border-indigo-200">
+                <div className="text-[10px] text-indigo-500 uppercase tracking-wider mb-1 font-bold flex items-center justify-center gap-1">
                   {t('longTermEff')}
+                  <svg className="w-3 h-3 text-indigo-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                </div>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {t('gpuHashrate')} ÷ ({t('cardPrice')} + {t('powerCons')}/1000 × {effMonths}{t('months')}×30×24 × {t('electricityPrice')})
+                  <br />{t('longTermEffDesc')}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
                 </div>
                 <div className="text-lg font-black text-indigo-700 font-mono">
                   {results.longTermEff.toFixed(4)}
@@ -656,25 +665,21 @@ export default function MinerCalculator({ initialData }: Props) {
                 <div className="text-[10px] text-gray-400">TH/{currency}</div>
               </div>
             </div>
-            {/* 运行周期选择 */}
-            <div className="flex flex-wrap gap-1 mb-2 justify-center">
-              {effPeriods.map((p, i) => (
-                <button
-                  key={p.label}
-                  onClick={() => setEffPeriodIndex(i)}
-                  className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${
-                    effPeriodIndex === i
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-500 border-gray-300 hover:border-indigo-400'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
+            {/* 运行周期下拉框 */}
+            <div className="flex items-center justify-center gap-2 text-[11px] text-gray-500">
+              <span>{t('effPeriod')}:</span>
+              <select
+                value={effMonths}
+                onChange={(e) => setEffMonths(parseInt(e.target.value))}
+                className="px-2 py-1 border border-gray-300 rounded-md text-xs bg-white focus:outline-none focus:border-indigo-400"
+              >
+                {[1,2,3,4,5,6,7,8,9,10,11,12,18,24,30,36].map(m => (
+                  <option key={m} value={m}>{m} {t('months')}</option>
+                ))}
+              </select>
+              <span className="text-gray-400">|</span>
+              <span>{t('tcoElectricity')}: <strong className="text-gray-700">{formatCurrency(results.longTermElecCost)}</strong></span>
             </div>
-            <p className="text-[10px] text-gray-400 text-center">
-              {t('longTermEffDesc')} | {t('effPeriod')}: {effPeriods[effPeriodIndex].label} ({t('tcoElectricity')}: {formatCurrency(results.longTermElecCost)})
-            </p>
           </div>
 
           {/* 网络与市场参数区 */}
