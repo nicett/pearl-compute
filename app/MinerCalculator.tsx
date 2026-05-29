@@ -50,6 +50,18 @@ export default function MinerCalculator({ initialData }: Props) {
   const compChartInstance = useRef<Chart | null>(null);
   const projChartInstance = useRef<Chart | null>(null);
 
+  // TCO 运行周期选项
+  const tcoPeriods = [
+    { label: '1天', hours: 24 },
+    { label: '3天', hours: 72 },
+    { label: '1周', hours: 168 },
+    { label: '1个月', hours: 720 },
+    { label: '3个月', hours: 2160 },
+    { label: '6个月', hours: 4320 },
+    { label: '1年', hours: 8760 },
+  ];
+  const [tcoPeriodIndex, setTcoPeriodIndex] = useState(4); // 默认 3 个月
+
   // 计算结果状态
   const [results, setResults] = useState({
     singleCardHourlyCoins: 0,
@@ -66,9 +78,9 @@ export default function MinerCalculator({ initialData }: Props) {
     fullMonths: 0,
     resDays: 0,
     resMonths: 0,
-    powerEfficiency: 0,
-    costEfficiency: 0,
-    compositeScore: 0,
+    tcoCost: 0,
+    tcoHardware: 0,
+    tcoElectricity: 0,
   });
 
   // 从本地存储加载设置
@@ -256,26 +268,12 @@ export default function MinerCalculator({ initialData }: Props) {
       resMonths = resDays / 30;
     }
 
-    // 评分计算
-    // 能效比：每瓦算力 (TH/W)
-    const powerEfficiency = powerCons > 0 ? gpuHashrate / powerCons : 0;
-
-    // 性价比：每货币单位算力 (TH/$ 或 TH/¥)
-    const costEfficiency = cardPrice > 0 ? gpuHashrate / cardPrice : 0;
-
-    // 综合评分：几何均值归一化到 0-100
-    // 基准：RTX 4090 ≈ 能效比 0.23 TH/W, 性价比 0.12 TH/$ → 综合 50 分
-    const REF_POWER_EFF = 0.23;
-    const REF_COST_EFF = isUSD ? 0.12 : 0.12 / safeRate; // CNY 基准按汇率换算
-    const REF_SCORE = 50;
-
-    let compositeScore = 0;
-    if (powerEfficiency > 0 && costEfficiency > 0) {
-      const peRatio = powerEfficiency / REF_POWER_EFF;
-      const ceRatio = costEfficiency / REF_COST_EFF;
-      compositeScore = Math.sqrt(peRatio * ceRatio) * REF_SCORE;
-      compositeScore = Math.min(100, Math.max(0, compositeScore));
-    }
+    // TCO 计算
+    const totalHours = tcoPeriods[tcoPeriodIndex].hours;
+    const powerKW = powerCons / 1000;
+    const tcoHardware = cardPrice; // 单卡采购成本
+    const tcoElectricity = powerKW * totalHours * elecPrice; // 周期内电费
+    const tcoCost = gpuHashrate > 0 ? (tcoHardware + tcoElectricity) / gpuHashrate : 0;
 
     setResults({
       singleCardHourlyCoins,
@@ -292,9 +290,9 @@ export default function MinerCalculator({ initialData }: Props) {
       fullMonths,
       resDays,
       resMonths,
-      powerEfficiency,
-      costEfficiency,
-      compositeScore,
+      tcoCost,
+      tcoHardware,
+      tcoElectricity,
     });
 
     // 更新图表
@@ -331,7 +329,7 @@ export default function MinerCalculator({ initialData }: Props) {
       ];
       projChartInstance.current.update();
     }
-  }, [inputs, saveSettings]);
+  }, [inputs, saveSettings, tcoPeriodIndex]);
 
   // 处理输入变化
   const handleInputChange = (field: string, value: string) => {
@@ -609,50 +607,50 @@ export default function MinerCalculator({ initialData }: Props) {
             </div>
           </div>
 
-          {/* 硬件评分区 */}
+          {/* TCO 综合单点成本 */}
           <div className="mb-8 p-4 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-1">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                {t('compositeScore')}
+                {t('tcoTitle')}
               </span>
-              <span className={`text-2xl font-black ${
-                results.compositeScore >= 70 ? 'text-green-600' :
-                results.compositeScore >= 40 ? 'text-yellow-600' :
-                'text-red-600'
-              }`}>
-                {results.compositeScore.toFixed(0)}
-                <span className="text-sm ml-1">/ 100</span>
+              <span className="text-2xl font-black text-indigo-700 font-mono">
+                {formatCurrency(results.tcoCost, 2)}
+                <span className="text-xs text-gray-400 ml-1">{t('tcoUnit')}</span>
               </span>
             </div>
-            {/* 评分进度条 */}
-            <div className="w-full h-2 bg-gray-200 rounded-full mb-3 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  results.compositeScore >= 70 ? 'bg-green-500' :
-                  results.compositeScore >= 40 ? 'bg-yellow-500' :
-                  'bg-red-500'
-                }`}
-                style={{ width: `${Math.min(100, results.compositeScore)}%` }}
-              />
+            <p className="text-[10px] text-gray-400 mb-3">{t('tcoDesc')}</p>
+            {/* 运行周期选择 */}
+            <div className="flex flex-wrap gap-1 mb-3">
+              {tcoPeriods.map((p, i) => (
+                <button
+                  key={p.label}
+                  onClick={() => setTcoPeriodIndex(i)}
+                  className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${
+                    tcoPeriodIndex === i
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-500 border-gray-300 hover:border-indigo-400'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center">
+            <div className="grid grid-cols-2 gap-3 text-center">
+              <div>
                 <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
-                  {t('powerEfficiency')}
+                  {t('tcoHardware')}
                 </div>
-                <div className="text-lg font-bold text-indigo-700 font-mono">
-                  {results.powerEfficiency.toFixed(3)}
+                <div className="text-sm font-bold text-gray-700 font-mono">
+                  {formatCurrency(results.tcoHardware)}
                 </div>
-                <div className="text-[10px] text-gray-400">{t('powerEfficiencyUnit')}</div>
               </div>
-              <div className="text-center">
+              <div>
                 <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
-                  {t('costEfficiency')}
+                  {t('tcoElectricity')} ({tcoPeriods[tcoPeriodIndex].label})
                 </div>
-                <div className="text-lg font-bold text-indigo-700 font-mono">
-                  {results.costEfficiency.toFixed(4)}
+                <div className="text-sm font-bold text-gray-700 font-mono">
+                  {formatCurrency(results.tcoElectricity)}
                 </div>
-                <div className="text-[10px] text-gray-400">{t('costEfficiencyUnit')}</div>
               </div>
             </div>
           </div>
