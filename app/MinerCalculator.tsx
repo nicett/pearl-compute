@@ -505,8 +505,8 @@ export default function MinerCalculator({ initialData }: Props) {
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
-            {/* 语言和主题切换 */}
-            <div className="flex items-center gap-2">
+            {/* 桌面端：按钮组 */}
+            <div className="hidden sm:flex items-center gap-2">
               <button
                 onClick={() => setLocale('en')}
                 className={`px-2 py-1 text-xs rounded ${
@@ -549,6 +549,26 @@ export default function MinerCalculator({ initialData }: Props) {
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" strokeWidth="2" /><path strokeWidth="2" d="M8 21h8M12 17v4" /></svg>
               </button>
+            </div>
+            {/* 手机端：下拉选择 */}
+            <div className="flex sm:hidden items-center gap-2">
+              <select
+                value={locale}
+                onChange={(e) => setLocale(e.target.value as 'en' | 'zh')}
+                className="bg-gray-700 text-gray-200 text-xs px-2 py-1 rounded border-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="en">EN / $</option>
+                <option value="zh">中文 / ￥</option>
+              </select>
+              <select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')}
+                className="bg-gray-700 text-gray-200 text-xs px-2 py-1 rounded border-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="light">☀️ {t('themeLight')}</option>
+                <option value="dark">🌙 {t('themeDark')}</option>
+                <option value="system">💻 {t('themeSystem')}</option>
+              </select>
             </div>
             <div className="text-gray-500 dark:text-gray-400 text-xs text-right hidden sm:block">
               {t('storage')}: <span className="text-green-400 font-bold">{t('enabled')}</span>
