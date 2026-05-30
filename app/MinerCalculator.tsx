@@ -836,25 +836,6 @@ export default function MinerCalculator({ initialData }: Props) {
                   readOnly
                   className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
                 />
-                {results.shutdownPrice > 0 && (
-                  <div className="group relative mt-1.5 flex items-center gap-1.5">
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400">{t('shutdownPrice')}:</span>
-                    <span className={`text-[11px] font-bold font-mono ${
-                      inputs.coinPrice > results.shutdownPrice * 1.2
-                        ? 'text-green-600 dark:text-green-400'
-                        : inputs.coinPrice > results.shutdownPrice
-                        ? 'text-yellow-600 dark:text-yellow-400'
-                        : 'text-red-600 dark:text-red-400'
-                    }`}>
-                      {results.shutdownPrice.toFixed(4)} USDT
-                    </span>
-                    <svg className="w-3 h-3 text-gray-300 dark:text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                      {t('tipShutdownPrice')}
-                      <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800 dark:border-t-gray-600" />
-                    </div>
-                  </div>
-                )}
               </div>
               <div className="input-group">
                 <label>{t('poolFee')}</label>
@@ -1113,6 +1094,84 @@ export default function MinerCalculator({ initialData }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* Shutdown Price Gauge */}
+            {results.shutdownPrice > 0 && (() => {
+              const sp = results.shutdownPrice;
+              const cp = inputs.coinPrice;
+              const safetyMargin = ((cp - sp) / sp) * 100;
+              const zone = safetyMargin > 20 ? 'safe' : safetyMargin > 0 ? 'warning' : 'danger';
+              const zoneColor = zone === 'safe' ? 'text-green-600 dark:text-green-400' : zone === 'warning' ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400';
+              const zoneBg = zone === 'safe' ? 'bg-green-500' : zone === 'warning' ? 'bg-yellow-500' : 'bg-red-500';
+
+              const maxPrice = Math.max(cp * 1.1, sp * 2.5);
+              const currentPct = Math.min((cp / maxPrice) * 100, 100);
+              const shutdownPct = Math.min((sp / maxPrice) * 100, 100);
+              const warnPct = Math.min((sp * 1.2 / maxPrice) * 100, 100);
+
+              return (
+                <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="group relative flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{t('shutdownPrice')}</span>
+                      <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                      <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal max-w-xs z-10">
+                        {t('tipShutdownPrice')}
+                        <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800 dark:border-t-gray-600" />
+                      </div>
+                    </div>
+                    <div className={`text-sm font-bold ${zoneColor}`}>
+                      {zone === 'danger' ? t('bleedingWarning') : `${safetyMargin > 0 ? '+' : ''}${safetyMargin.toFixed(1)}%`}
+                    </div>
+                  </div>
+
+                  {/* Gauge Bar */}
+                  <div className="relative h-8 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-visible">
+                    {/* Background zones */}
+                    <div className="absolute inset-0 rounded-lg overflow-hidden">
+                      {/* Danger zone: 0 → shutdown */}
+                      <div className="absolute inset-y-0 left-0 bg-red-200 dark:bg-red-900/40" style={{ width: `${shutdownPct}%` }} />
+                      {/* Warning zone: shutdown → shutdown×1.2 */}
+                      <div className="absolute inset-y-0 bg-yellow-200 dark:bg-yellow-900/40" style={{ left: `${shutdownPct}%`, width: `${warnPct - shutdownPct}%` }} />
+                      {/* Safe zone: shutdown×1.2 → max */}
+                      <div className="absolute inset-y-0 right-0 bg-green-100 dark:bg-green-900/20" style={{ left: `${warnPct}%` }} />
+                    </div>
+
+                    {/* Shutdown price marker */}
+                    <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style={{ left: `${shutdownPct}%` }}>
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-mono text-red-600 dark:text-red-400 whitespace-nowrap">
+                        {sp.toFixed(4)}
+                      </div>
+                    </div>
+
+                    {/* Current price marker */}
+                    <div className="absolute top-0 bottom-0 z-10" style={{ left: `${currentPct}%` }}>
+                      <div className={`absolute top-0 bottom-0 w-0.5 ${zoneBg}`} />
+                      <div className={`absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-bold font-mono ${zoneColor} whitespace-nowrap`}>
+                        {cp.toFixed(4)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex items-center justify-between mt-6 text-[10px] text-gray-400 dark:text-gray-500">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-red-500" />
+                        {t('shutdownPrice')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className={`w-2 h-2 rounded-full ${zoneBg}`} />
+                        {t('coinPrice')}
+                      </span>
+                    </div>
+                    <span className="font-mono">
+                      {t('shutdownPrice')}: {sp.toFixed(4)} USDT
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Section 3: Charts */}
