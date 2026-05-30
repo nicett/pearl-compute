@@ -77,5 +77,7 @@
   "footer": "专业 GPU 挖矿分析与套利工具。版本 2.0.0",
   "themeLight": "白天模式",
   "themeDark": "夜晚模式",
-  "themeSystem": "跟随系统"
+  "themeSystem": "跟随系统",
+  "shutdownPrice": "关机币价",
+  "tipShutdownPrice": "当币价跌至此值时，每日挖矿产出 = 每日电费，利润为零。低于此价格继续开机将亏损。"
 }

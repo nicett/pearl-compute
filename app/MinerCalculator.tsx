@@ -75,6 +75,7 @@ export default function MinerCalculator({ initialData }: Props) {
     powerEff: 0,
     longTermEff: 0,
     longTermElecCost: 0,
+    shutdownPrice: 0,
   });
 
   // 从本地存储加载设置
@@ -290,6 +291,11 @@ export default function MinerCalculator({ initialData }: Props) {
     const longTermTotal = cardPrice + longTermElecCost;
     const longTermEff = longTermTotal > 0 ? gpuHashrate / longTermTotal : 0;
 
+    // 关机币价：每日电费 = 每日毛产出时的币价
+    // dailyElecCost = totalHashrate * hashrateYield * 24 * (1 - poolFee/100) * shutdownPrice
+    const effectiveYield = totalHashrate * hashrateYield * 24 * (1 - poolFee / 100);
+    const shutdownPrice = effectiveYield > 0 ? dailyElecCost / effectiveYield : 0;
+
     setResults({
       singleCardHourlyCoins,
       totalHashrate,
@@ -309,6 +315,7 @@ export default function MinerCalculator({ initialData }: Props) {
       powerEff,
       longTermEff,
       longTermElecCost,
+      shutdownPrice,
     });
 
     // 更新图表
@@ -827,6 +834,25 @@ export default function MinerCalculator({ initialData }: Props) {
                   readOnly
                   className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
                 />
+                {results.shutdownPrice > 0 && (
+                  <div className="group relative mt-1.5 flex items-center gap-1.5">
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">{t('shutdownPrice')}:</span>
+                    <span className={`text-[11px] font-bold font-mono ${
+                      inputs.coinPrice > results.shutdownPrice * 1.2
+                        ? 'text-green-600 dark:text-green-400'
+                        : inputs.coinPrice > results.shutdownPrice
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {results.shutdownPrice.toFixed(4)}
+                    </span>
+                    <svg className="w-3 h-3 text-gray-300 dark:text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                      {t('tipShutdownPrice')}
+                      <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-800 dark:border-t-gray-600" />
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="input-group">
                 <label>{t('poolFee')}</label>
