@@ -291,10 +291,12 @@ export default function MinerCalculator({ initialData }: Props) {
     const longTermTotal = cardPrice + longTermElecCost;
     const longTermEff = longTermTotal > 0 ? gpuHashrate / longTermTotal : 0;
 
-    // 关机币价：每日电费 = 每日毛产出时的币价
+    // 关机币价（USDT）：每日电费 = 每日毛产出时的币价
     // dailyElecCost = totalHashrate * hashrateYield * 24 * (1 - poolFee/100) * shutdownPrice
     const effectiveYield = totalHashrate * hashrateYield * 24 * (1 - poolFee / 100);
-    const shutdownPrice = effectiveYield > 0 ? dailyElecCost / effectiveYield : 0;
+    // CNY 模式需将电费转换为 USD，与币价（USDT）单位一致
+    const dailyElecCostUSD = isUSD ? dailyElecCost : dailyElecCost / safeRate;
+    const shutdownPrice = effectiveYield > 0 ? dailyElecCostUSD / effectiveYield : 0;
 
     setResults({
       singleCardHourlyCoins,
