@@ -79,5 +79,8 @@
   "themeDark": "Dark Mode",
   "themeSystem": "System",
   "shutdownPrice": "Shutdown Price",
-  "tipShutdownPrice": "When coin price drops to this level, daily output equals daily electricity cost — zero profit. Below this price, mining operates at a loss."
+  "tipShutdownPrice": "When coin price drops to this level, daily output equals daily electricity cost — zero profit. Below this price, mining operates at a loss.",
+  "zoneSafe": "Safe",
+  "zoneCaution": "Caution",
+  "zoneDanger": "Danger"
 }

@@ -1139,13 +1139,6 @@ export default function MinerCalculator({ initialData }: Props) {
                       <div className="absolute inset-y-0 right-0 bg-red-200 dark:bg-red-900/40" style={{ width: `${100 - shutdownPct}%` }} />
                     </div>
 
-                    {/* Zone labels inside bar */}
-                    <div className="absolute inset-0 flex items-center pointer-events-none">
-                      <span className="absolute text-[9px] font-bold text-green-600/60 dark:text-green-400/50 left-2">SAFE</span>
-                      <span className="absolute text-[9px] font-bold text-yellow-600/60 dark:text-yellow-400/50" style={{ left: `${(warnPct + shutdownPct) / 2}%`, transform: 'translateX(-50%)' }}>CAUTION</span>
-                      <span className="absolute text-[9px] font-bold text-red-600/60 dark:text-red-400/50 right-2">DANGER</span>
-                    </div>
-
                     {/* Current price marker */}
                     <div className="absolute top-0 bottom-0 z-20" style={{ left: `${currentPct}%` }}>
                       <div className={`absolute top-0 bottom-0 w-0.5 ${zoneBg}`} />
@@ -1170,15 +1163,15 @@ export default function MinerCalculator({ initialData }: Props) {
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-green-400 dark:bg-green-500" />
-                        <span>SAFE &gt;20%</span>
+                        <span>{t('zoneSafe')} &gt;20%</span>
                       </span>
                       <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 dark:bg-yellow-500" />
-                        <span>0~20%</span>
+                        <span>{t('zoneCaution')} 0~20%</span>
                       </span>
                       <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-400 dark:bg-red-500" />
-                        <span>&lt;0%</span>
+                        <span>{t('zoneDanger')} &lt;0%</span>
                       </span>
                     </div>
                     <span className="font-mono text-[10px]">
