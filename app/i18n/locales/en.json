@@ -74,5 +74,8 @@
   "section2": "Risk Control & Payback Period",
   "section3": "Long-term Investment Return",
   "loading": "Loading real-time data...",
-  "footer": "Professional GPU Mining Analysis & Arbitrage Tool. Version 2.0.0"
+  "footer": "Professional GPU Mining Analysis & Arbitrage Tool. Version 2.0.0",
+  "themeLight": "Light Mode",
+  "themeDark": "Dark Mode",
+  "themeSystem": "System"
 }

@@ -74,5 +74,8 @@
   "section2": "风控与回本周期预测",
   "section3": "长线投资回报可视化",
   "loading": "正在加载实时数据...",
-  "footer": "专业 GPU 挖矿分析与套利工具。版本 2.0.0"
+  "footer": "专业 GPU 挖矿分析与套利工具。版本 2.0.0",
+  "themeLight": "白天模式",
+  "themeDark": "夜晚模式",
+  "themeSystem": "跟随系统"
 }
