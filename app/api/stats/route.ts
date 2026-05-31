@@ -46,6 +46,46 @@ async function fetchPrlPrice() {
   }
 }
 
+// 从 SafeTrade API 获取 PRL/USDT 最新价格
+async function fetchSafetradePrice() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(
+      'https://safe.trade/api/v2/trade/public/tickers/prlusdt',
+      {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    clearTimeout(timeout);
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const price = parseFloat(data.last);
+
+    if (isNaN(price) || price <= 0 || price > 1000) return null;
+
+    return {
+      price,
+      source: 'SafeTrade',
+      high: parseFloat(data.high) || null,
+      low: parseFloat(data.low) || null,
+      volume: parseFloat(data.volume) || null,
+      priceChange: data.price_change_percent || null,
+    };
+  } catch (error) {
+    console.error('Failed to fetch SafeTrade price:', error);
+    return null;
+  }
+}
+
 // 获取 USD/CNY 实时汇率
 async function fetchExchangeRate() {
   try {
@@ -119,9 +159,10 @@ async function getFreshData() {
   }
 
   // 并行请求所有数据
-  const [poolData, priceData, exchangeData] = await Promise.all([
+  const [poolData, priceData, safetradeData, exchangeData] = await Promise.all([
     fetchPoolStats(),
     fetchPrlPrice(),
+    fetchSafetradePrice(),
     fetchExchangeRate(),
   ]);
 
@@ -133,18 +174,31 @@ async function getFreshData() {
     return null;
   }
 
-  // 注入价格数据
-  if (priceData && poolData.coins?.[0]) {
-    poolData.coins[0].price = priceData.price;
-    poolData.priceSource = priceData.source;
-    poolData.tradeId = priceData.tradeId;
-    poolData.tradeTime = priceData.tradeTime;
+  // 注入价格数据（多来源）
+  const prices: Record<string, any> = {};
+
+  if (priceData) {
+    prices.pearlOtc = priceData;
+  } else if (cachedData?.prices?.pearlOtc) {
+    prices.pearlOtc = cachedData.prices.pearlOtc;
+  }
+
+  if (safetradeData) {
+    prices.safetrade = safetradeData;
+  } else if (cachedData?.prices?.safetrade) {
+    prices.safetrade = cachedData.prices.safetrade;
+  }
+
+  poolData.prices = prices;
+
+  // 默认使用 Pearl OTC 价格（向后兼容）
+  const defaultPrice = prices.pearlOtc?.price || prices.safetrade?.price || null;
+  if (defaultPrice && poolData.coins?.[0]) {
+    poolData.coins[0].price = defaultPrice;
+    poolData.priceSource = prices.pearlOtc ? 'Pearl OTC' : 'SafeTrade';
   } else if (cachedData?.coins?.[0]?.price) {
-    // 保留旧的价格数据
     poolData.coins[0].price = cachedData.coins[0].price;
     poolData.priceSource = cachedData.priceSource;
-    poolData.tradeId = cachedData.tradeId;
-    poolData.tradeTime = cachedData.tradeTime;
   }
 
   // 注入汇率数据（保留两位小数）
