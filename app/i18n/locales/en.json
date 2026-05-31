@@ -82,5 +82,13 @@
   "tipShutdownPrice": "When coin price drops to this level, daily output equals daily electricity cost — zero profit. Below this price, mining operates at a loss.",
   "zoneSafe": "Safe",
   "zoneCaution": "Caution",
-  "zoneDanger": "Danger"
+  "zoneDanger": "Danger",
+  "dailyROI": "Daily ROI",
+  "tipDailyROI": "Daily Net Profit ÷ Total Investment × 100%. Shows the percentage return on each dollar invested per day.",
+  "annualizedROI": "Annualized ROI",
+  "tipAnnualizedROI": "Daily ROI × 365 (simple interest). Annualized return for comparison with bank deposits, funds, etc.",
+  "yearlyROI": "1Y ROI",
+  "tipYearlyROI": "(Annual Net − Depreciation) ÷ Total Investment × 100%. Actual annual return after accounting for equipment residual value.",
+  "profitMultiple": "Profit Multiple",
+  "tipProfitMultiple": "Annual Net Profit ÷ Total Investment. How many dollars earned per dollar invested in one year. 1.0x = break-even in 1 year."
 }

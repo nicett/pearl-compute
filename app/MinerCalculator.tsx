@@ -76,6 +76,10 @@ export default function MinerCalculator({ initialData }: Props) {
     longTermEff: 0,
     longTermElecCost: 0,
     shutdownPrice: 0,
+    dailyROI: 0,
+    annualizedROI: 0,
+    yearlyROI: 0,
+    profitMultiple: 0,
   });
 
   // 从本地存储加载设置
@@ -298,6 +302,14 @@ export default function MinerCalculator({ initialData }: Props) {
     const dailyElecCostUSD = isUSD ? dailyElecCost : dailyElecCost / safeRate;
     const shutdownPrice = effectiveYield > 0 ? dailyElecCostUSD / effectiveYield : 0;
 
+    // 投资回报率指标
+    const dailyROI = totalInvestment > 0 ? (dailyNet / totalInvestment) * 100 : 0;
+    const annualizedROI = dailyROI * 365;
+    const annualNet = dailyNet * 365;
+    const depreciation = totalInvestment - totalResidual;
+    const yearlyROI = totalInvestment > 0 ? ((annualNet - depreciation) / totalInvestment) * 100 : 0;
+    const profitMultiple = totalInvestment > 0 ? annualNet / totalInvestment : 0;
+
     setResults({
       singleCardHourlyCoins,
       totalHashrate,
@@ -318,6 +330,10 @@ export default function MinerCalculator({ initialData }: Props) {
       longTermEff,
       longTermElecCost,
       shutdownPrice,
+      dailyROI,
+      annualizedROI,
+      yearlyROI,
+      profitMultiple,
     });
 
     // 更新图表
@@ -1091,6 +1107,68 @@ export default function MinerCalculator({ initialData }: Props) {
                       ({t('about')} {formatNumber(results.resMonths, 1)} {t('months')})
                     </span>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* ROI Metrics */}
+            <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Daily ROI */}
+                <div className="group metric-card border-blue-500 relative">
+                  <div className="absolute top-2 right-2">
+                    <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                    <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal w-52 z-10">
+                      {t('tipDailyROI')}
+                      <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800 dark:border-t-gray-600" />
+                    </div>
+                  </div>
+                  <div className="metric-title">{t('dailyROI')}</div>
+                  <div className={`metric-value ${results.dailyROI >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600'}`}>
+                    {isBleeding ? '-' : `${results.dailyROI.toFixed(3)}%`}
+                  </div>
+                </div>
+                {/* Annualized ROI */}
+                <div className="group metric-card border-indigo-500 relative">
+                  <div className="absolute top-2 right-2">
+                    <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                    <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal w-52 z-10">
+                      {t('tipAnnualizedROI')}
+                      <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800 dark:border-t-gray-600" />
+                    </div>
+                  </div>
+                  <div className="metric-title">{t('annualizedROI')}</div>
+                  <div className={`metric-value ${results.annualizedROI >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-red-600'}`}>
+                    {isBleeding ? '-' : `${results.annualizedROI.toFixed(1)}%`}
+                  </div>
+                </div>
+                {/* 1Y ROI */}
+                <div className="group metric-card border-teal-500 relative">
+                  <div className="absolute top-2 right-2">
+                    <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                    <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal w-52 z-10">
+                      {t('tipYearlyROI')}
+                      <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800 dark:border-t-gray-600" />
+                    </div>
+                  </div>
+                  <div className="metric-title">{t('yearlyROI')}</div>
+                  <div className={`metric-value ${results.yearlyROI >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-red-600'}`}>
+                    {isBleeding ? '-' : `${results.yearlyROI.toFixed(1)}%`}
+                  </div>
+                </div>
+                {/* Profit Multiple */}
+                <div className="group metric-card border-amber-500 relative">
+                  <div className="absolute top-2 right-2">
+                    <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                    <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal w-52 z-10">
+                      {t('tipProfitMultiple')}
+                      <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800 dark:border-t-gray-600" />
+                    </div>
+                  </div>
+                  <div className="metric-title">{t('profitMultiple')}</div>
+                  <div className={`metric-value ${results.profitMultiple >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600'}`}>
+                    {isBleeding ? '-' : `${results.profitMultiple.toFixed(2)}x`}
+                  </div>
                 </div>
               </div>
             </div>
