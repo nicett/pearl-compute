@@ -1253,7 +1253,7 @@ export default function MinerCalculator({ initialData }: Props) {
                       </div>
                     </div>
                     <div className={`text-sm font-bold ${zoneColor}`}>
-                      {zone === 'danger' ? t('bleedingWarning') : `${safetyMargin > 0 ? '+' : ''}${safetyMargin.toFixed(1)}%`}
+                      {zone === 'danger' ? t('bleedingWarning') : `${t('safetyMargin')} ${safetyMargin > 0 ? '+' : ''}${safetyMargin.toFixed(1)}%`}
                     </div>
                   </div>
 

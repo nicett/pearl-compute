@@ -80,6 +80,7 @@
   "themeSystem": "跟随系统",
   "shutdownPrice": "关机币价",
   "tipShutdownPrice": "当币价跌至此值时，每日挖矿产出 = 每日电费，利润为零。低于此价格继续开机将亏损。",
+  "safetyMargin": "安全边际：",
   "zoneSafe": "安全",
   "zoneCaution": "警惕",
   "zoneDanger": "危险",
