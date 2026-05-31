@@ -48,6 +48,14 @@ export default function MinerCalculator({ initialData }: Props) {
 
   // 多价格来源（可扩展数组，每项 { name, price }）
   const [allPrices, setAllPrices] = useState<Array<{ name: string; price: number }>>([]);
+  const [selectedPriceSource, setSelectedPriceSource] = useState<string>('Pearl OTC');
+
+  // 选择价格来源
+  const handleSelectPrice = useCallback((name: string, price: number) => {
+    setSelectedPriceSource(name);
+    setInputs((prev) => ({ ...prev, coinPrice: price }));
+    setPriceSource(name);
+  }, []);
 
   // 图表引用
   const compChartRef = useRef<HTMLCanvasElement>(null);
@@ -405,12 +413,14 @@ export default function MinerCalculator({ initialData }: Props) {
       }
       setAllPrices(priceList);
 
-      // 默认使用 Pearl OTC 价格，回退到第一个可用来源
-      const selectedPrice = priceList.find(p => p.name === 'Pearl OTC')?.price
+      // 根据用户选中的来源决定价格，回退到 Pearl OTC → 第一个可用
+      const selectedPrice = priceList.find(p => p.name === selectedPriceSource)?.price
+        || priceList.find(p => p.name === 'Pearl OTC')?.price
         || priceList[0]?.price
         || coinData.price
         || null;
-      const sourceName = priceList.find(p => p.name === 'Pearl OTC')?.name
+      const sourceName = priceList.find(p => p.name === selectedPriceSource)?.name
+        || priceList.find(p => p.name === 'Pearl OTC')?.name
         || priceList[0]?.name
         || data.priceSource
         || 'unknown';
@@ -470,7 +480,7 @@ export default function MinerCalculator({ initialData }: Props) {
       setSyncStatus('error');
       return false; // 请求失败
     }
-  }, []);
+  }, [selectedPriceSource]);
 
   // 倒计时逻辑
   const fetchingRef = useRef(false);
@@ -875,12 +885,23 @@ export default function MinerCalculator({ initialData }: Props) {
                 />
                 {/* 多来源价格展示 */}
                 {allPrices.length > 0 && (
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
-                    {allPrices.map((p) => (
-                      <span key={p.name} className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
-                        {p.name}: <span className="font-bold text-gray-700 dark:text-gray-300">{p.price.toFixed(4)}</span>
-                      </span>
-                    ))}
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {allPrices.map((p) => {
+                      const isSelected = p.name === selectedPriceSource;
+                      return (
+                        <button
+                          key={p.name}
+                          onClick={() => handleSelectPrice(p.name, p.price)}
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-mono transition-colors ${
+                            isSelected
+                              ? 'bg-blue-500 text-white font-bold'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {p.name}: {p.price.toFixed(4)}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
