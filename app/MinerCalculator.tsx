@@ -46,19 +46,8 @@ export default function MinerCalculator({ initialData }: Props) {
   const [countdown, setCountdown] = useState(10);
   const [isStale, setIsStale] = useState(false);
 
-  // 多价格来源
-  const [prices, setPrices] = useState<{ pearlOtc?: number; safetrade?: number }>({});
-  const [priceSourceSelection, setPriceSourceSelection] = useState<'pearlOtc' | 'safetrade'>('pearlOtc');
-
-  // 切换价格来源
-  const handlePriceSourceChange = useCallback((source: 'pearlOtc' | 'safetrade') => {
-    setPriceSourceSelection(source);
-    const price = prices[source];
-    if (price) {
-      setInputs((prev) => ({ ...prev, coinPrice: price }));
-      setPriceSource(source === 'safetrade' ? 'SafeTrade' : 'Pearl OTC');
-    }
-  }, [prices]);
+  // 多价格来源（可扩展数组，每项 { name, price }）
+  const [allPrices, setAllPrices] = useState<Array<{ name: string; price: number }>>([]);
 
   // 图表引用
   const compChartRef = useRef<HTMLCanvasElement>(null);
@@ -406,21 +395,25 @@ export default function MinerCalculator({ initialData }: Props) {
       const exchangeRate = data.exchangeRate || null;
       const lastSyncTsNew = data.lastSyncTime || null;
 
-      // 解析多价格来源
-      const newPrices: { pearlOtc?: number; safetrade?: number } = {};
+      // 解析多价格来源（可扩展）
+      const priceList: Array<{ name: string; price: number }> = [];
       if (data.prices?.pearlOtc?.price) {
-        newPrices.pearlOtc = data.prices.pearlOtc.price;
+        priceList.push({ name: 'Pearl OTC', price: data.prices.pearlOtc.price });
       }
       if (data.prices?.safetrade?.price) {
-        newPrices.safetrade = data.prices.safetrade.price;
+        priceList.push({ name: 'SafeTrade', price: data.prices.safetrade.price });
       }
-      setPrices(newPrices);
+      setAllPrices(priceList);
 
-      // 根据用户选择的来源决定使用哪个价格
-      const selectedPrice = newPrices[priceSourceSelection] || newPrices.pearlOtc || newPrices.safetrade || coinData.price || null;
-      const sourceName = priceSourceSelection === 'safetrade' && newPrices.safetrade
-        ? 'SafeTrade'
-        : newPrices.pearlOtc ? 'Pearl OTC' : (data.priceSource || 'unknown');
+      // 默认使用 Pearl OTC 价格，回退到第一个可用来源
+      const selectedPrice = priceList.find(p => p.name === 'Pearl OTC')?.price
+        || priceList[0]?.price
+        || coinData.price
+        || null;
+      const sourceName = priceList.find(p => p.name === 'Pearl OTC')?.name
+        || priceList[0]?.name
+        || data.priceSource
+        || 'unknown';
 
       // 计算每 TH 时产
       const blockReward = parseFloat(coinData.reward) || 2681.69;
@@ -880,33 +873,14 @@ export default function MinerCalculator({ initialData }: Props) {
                   readOnly
                   className="bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
                 />
-                {/* Price Source Selector */}
-                {(prices.pearlOtc || prices.safetrade) && (
-                  <div className="flex gap-1.5 mt-1.5">
-                    {prices.pearlOtc && (
-                      <button
-                        onClick={() => handlePriceSourceChange('pearlOtc')}
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
-                          priceSourceSelection === 'pearlOtc'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        }`}
-                      >
-                        Pearl OTC: {prices.pearlOtc.toFixed(4)}
-                      </button>
-                    )}
-                    {prices.safetrade && (
-                      <button
-                        onClick={() => handlePriceSourceChange('safetrade')}
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
-                          priceSourceSelection === 'safetrade'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        }`}
-                      >
-                        SafeTrade: {prices.safetrade.toFixed(4)}
-                      </button>
-                    )}
+                {/* 多来源价格展示 */}
+                {allPrices.length > 0 && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+                    {allPrices.map((p) => (
+                      <span key={p.name} className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
+                        {p.name}: <span className="font-bold text-gray-700 dark:text-gray-300">{p.price.toFixed(4)}</span>
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
