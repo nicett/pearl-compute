@@ -30,10 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script src="https://cdn.tailwindcss.com" async />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="p-4 md:p-8 min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col">
         <ThemeProvider>
           <I18nProvider>
             {children}

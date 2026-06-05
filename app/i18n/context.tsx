@@ -43,7 +43,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   // 翻译函数
   const t = (key: string): string => {
-    return locales[locale][key] || locales['en'][key] || key;
+    if (key in locales[locale]) return locales[locale][key];
+    if (key in locales['en']) return locales['en'][key];
+    return key;
   };
 
   return (

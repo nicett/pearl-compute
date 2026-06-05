@@ -1,60 +1,54 @@
 import MinerCalculator from './MinerCalculator';
+import { InitialData } from './types';
 
 // 服务器端预取数据
-async function getInitialData() {
+async function getInitialData(): Promise<InitialData> {
   try {
-    // 直接调用 API 路由的逻辑，而不是通过 HTTP 请求
-    // 这样可以避免服务器端请求自己的问题
     const { GET } = await import('./api/stats/route');
     const response = await GET();
     const data = await response.json();
 
     const coinData = data.coins?.[0] || {};
 
-    // 计算每 TH 时产
-    const blockReward = parseFloat(coinData.reward) || 2681.69;
-    const blockTimeSec = 124.77;
-
-    let networkHashrateTH = 19.86 * 1000000;
-    if (coinData.network_hash) {
-      const match = coinData.network_hash.match(/([\d.]+)\s*(EH|TH|GH|MH)/i);
-      if (match) {
-        const value = parseFloat(match[1]);
-        const unit = match[2].toUpperCase();
-        const multipliers: Record<string, number> = {
-          EH: 1000000,
-          TH: 1,
-          GH: 0.001,
-          MH: 0.000001,
-        };
-        networkHashrateTH = value * (multipliers[unit] || 1);
-      }
-    }
-
-    const blocksPerHour = 3600 / blockTimeSec;
-    const globalHourlyOutput = blocksPerHour * blockReward;
-    const yieldPerTH = globalHourlyOutput / networkHashrateTH;
+    // 使用 API 路由中已计算的网络统计（基于 PRLScan 全网数据）
+    const networkStats = data.networkStats || {
+      networkHashrate: 'N/A',
+      networkHashrateTH: 0,
+      blockReward: 0,
+      dailyGlobalOutput: 0,
+      avgBlockTime: 'N/A',
+      hashrateYield: 0,
+    };
 
     return {
-      hashrateYield: yieldPerTH > 0 && isFinite(yieldPerTH) ? yieldPerTH : 0.003896,
-      coinPrice: coinData.price || 0.18,
-      exchangeRate: data.exchangeRate || 6.80,
-      priceSource: data.priceSource || 'unknown',
+      hashrateYield: networkStats.hashrateYield > 0 ? networkStats.hashrateYield : 0.0023,
+      coinPrice: coinData.price ?? 0.18,
+      exchangeRate: data.exchangeRate ?? 6.80,
+      priceSource: data.priceSource ?? 'unknown',
+      networkStats,
+      priceHistory: data.priceHistory || [],
     };
   } catch (error) {
     console.error('Failed to fetch initial data:', error);
-    // 返回默认值
     return {
-      hashrateYield: 0.003896,
+      hashrateYield: 0.0023,
       coinPrice: 0.18,
       exchangeRate: 6.80,
       priceSource: 'unknown',
+      networkStats: {
+        networkHashrate: 'N/A',
+        networkHashrateTH: 0,
+        blockReward: 0,
+        dailyGlobalOutput: 0,
+        avgBlockTime: 'N/A',
+        hashrateYield: 0,
+      },
+      priceHistory: [],
     };
   }
 }
 
 export default async function Home() {
   const initialData = await getInitialData();
-
   return <MinerCalculator initialData={initialData} />;
 }
