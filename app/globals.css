@@ -116,6 +116,27 @@
     @apply bg-gray-100 text-gray-400;
   }
 
+  /* Select input styling */
+  .input-group-select {
+    @apply w-full py-2.5 px-3.5 border border-edge bg-surface-dark text-gray-100 font-mono text-base
+           transition-colors duration-150;
+  }
+
+  .input-group-select:focus {
+    @apply outline-none border-accent;
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.2);
+  }
+
+  /* Light mode select */
+  html:not(.dark) .input-group-select {
+    @apply bg-white border-gray-200 text-gray-900;
+  }
+
+  html:not(.dark) .input-group-select:focus {
+    @apply border-accent-dim;
+    box-shadow: 0 0 0 1px rgba(0, 184, 212, 0.2);
+  }
+
   /* === Industrial Metric Card === */
   .metric-card {
     @apply bg-surface border border-edge p-4 transition-colors duration-150;

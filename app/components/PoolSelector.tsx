@@ -50,7 +50,7 @@ export default function PoolSelector({
         value={selectedPool || ''}
         onChange={(e) => onSelectPool(e.target.value || null)}
         disabled={loading || error}
-        className="w-full bg-surface-dark border border-edge text-sm px-3 py-2 focus:outline-none focus:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="input-group-select w-full bg-surface-dark border border-edge text-sm px-3 py-2 text-gray-200 focus:outline-none focus:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="">{t('allNetwork')}</option>
         {pools.map((pool) => (
@@ -62,10 +62,10 @@ export default function PoolSelector({
 
       {/* 矿池详情 */}
       {currentPool && (
-        <div className="bg-surface-dark/50 border border-edge/50 p-3 space-y-2">
+        <div className="bg-surface border border-edge p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted">{t('poolHashrate')}</span>
-            <span className="text-xs font-mono text-indigo-400">
+            <span className="text-xs font-mono text-gray-200">
               {currentPool.reported_hashrate_hps
                 ? formatHashrate(currentPool.reported_hashrate_hps)
                 : 'N/A'}
@@ -73,20 +73,20 @@ export default function PoolSelector({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted">{t('poolBlocks24h')}</span>
-            <span className="text-xs font-mono text-emerald-400">
+            <span className="text-xs font-mono text-gray-200">
               {currentPool.blocks_24h}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted">{t('poolShare')}</span>
-            <span className="text-xs font-mono text-cyan-400">
+            <span className="text-xs font-mono text-gray-200">
               {currentPool.pool_share_24h.toFixed(2)}%
             </span>
           </div>
           {currentPool.reported_hashrate_hps && currentPool.reported_hashrate_hps > 0 && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted">{t('poolYield')}</span>
-              <span className="text-xs font-mono text-amber-400">
+              <span className="text-xs font-mono text-gray-200">
                 {calcPoolYield(currentPool).toFixed(6)}
               </span>
             </div>
