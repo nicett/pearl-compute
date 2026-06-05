@@ -11,8 +11,6 @@ import {
   calcCostRatio,
   calcPaybackDays,
   calcEfficiency,
-  calcLongTermEff,
-  calcLongTermElecCost,
   calcShutdownPrice,
   calcDailyROI,
   calcAnnualizedROI,
@@ -26,7 +24,6 @@ import {
  */
 export function useMiningCalculator(
   inputs: MiningInputs,
-  effMonths: number,
   currency: Currency
 ): MiningResults {
   return useMemo(() => {
@@ -77,8 +74,6 @@ export function useMiningCalculator(
     // 效能分析
     const costEff = calcEfficiency(gpuHashrate, cardPrice);
     const powerEff = calcEfficiency(gpuHashrate, powerCons);
-    const longTermEff = calcLongTermEff(gpuHashrate, cardPrice, powerCons, effMonths, electricityPrice);
-    const longTermElecCost = calcLongTermElecCost(powerCons, effMonths, electricityPrice);
 
     // 关机币价
     const effectiveYield = calcDailyCoinOutput(totalHashrate, hashrateYield, poolFee);
@@ -109,13 +104,15 @@ export function useMiningCalculator(
       resMonths,
       costEff,
       powerEff,
-      longTermEff,
-      longTermElecCost,
       shutdownPrice,
       dailyROI,
       annualizedROI,
       yearlyROI,
       profitMultiple,
     };
-  }, [inputs, effMonths, currency]);
+  }, [
+    inputs.gpuCount, inputs.cardPrice, inputs.residualValue, inputs.powerCons,
+    inputs.gpuHashrate, inputs.hashrateYield, inputs.coinPrice, inputs.poolFee,
+    inputs.electricityPrice, inputs.exchangeRate, currency
+  ]);
 }

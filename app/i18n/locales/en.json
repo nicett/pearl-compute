@@ -38,10 +38,6 @@
   "costEffDesc": "Hashrate per unit of currency",
   "powerEff": "Power Efficiency",
   "powerEffDesc": "Hashrate per watt of power",
-  "longTermEff": "Long-term Efficiency",
-  "longTermEffDesc": "Hashrate / (price + period electricity)",
-  "effPeriod": "Electricity Period",
-  "tcoElectricity": "Period Electricity",
   "effHigher": "Higher is better",
   "effSingleCard": "Metrics below are based on single GPU parameters only, independent of GPU count.",
   "tipTotalHashrate": "GPU Hashrate × GPU Count",
@@ -84,9 +80,6 @@
   "disclaimer": "All calculations are based on currently available real-time data and are for reference only. Actual results may vary due to network difficulty fluctuations, price volatility, and other factors.",
   "tipCostEff": "Hashrate per unit of currency spent. Higher = better value. Formula: GPU Hashrate ÷ Card Price",
   "tipPowerEff": "Hashrate per watt of power consumed. Higher = more energy efficient. Formula: GPU Hashrate ÷ Power Consumption",
-  "tipLongTermEff": "Hashrate per total cost (hardware + electricity over the period). Accounts for long-term operating costs. Formula: GPU Hashrate ÷ (Card Price + Period Electricity Cost)",
-  "tipEffPeriod": "Select the operating period to calculate cumulative electricity costs and long-term efficiency.",
-  "tipTcoElectricity": "Total electricity cost over the selected period. Formula: Power(kW) × Hours × Electricity Price",
   "themeLight": "Light Mode",
   "themeDark": "Dark Mode",
   "themeSystem": "System",
@@ -128,5 +121,6 @@
   "poolBlocks24h": "24h Blocks",
   "poolShare": "Network Share",
   "poolYield": "Pool Yield",
-  "poolFetchError": "Failed to load pool data"
+  "poolFetchError": "Failed to load pool data",
+  "controlledByPool": "controlled by pool"
 }

@@ -55,31 +55,15 @@ export function calcCostRatio(dailyElecCost: number, dailyGross: number): number
   return pct(dailyElecCost, dailyGross);
 }
 
-/** 回本天数 */
+/** 回本天数（亏损时返回 Infinity） */
 export function calcPaybackDays(investment: number, dailyNet: number): number {
-  if (dailyNet <= 0) return 0;
+  if (dailyNet <= 0) return Infinity;
   return safeDiv(investment, dailyNet);
 }
 
 /** 性价比 = 算力 / 价格 */
 export function calcEfficiency(hashrate: number, cost: number): number {
   return safeDiv(hashrate, cost);
-}
-
-/** 长期运营性价比 */
-export function calcLongTermEff(gpuHashrate: number, cardPrice: number, powerCons: number, effMonths: number, elecPrice: number): number {
-  const powerKW = N(math.divide(D(powerCons), D(1000)));
-  const totalHours = N(math.chain(D(effMonths)).multiply(D(30)).multiply(D(24)).done());
-  const longTermElecCost = N(math.chain(D(powerKW)).multiply(D(totalHours)).multiply(D(elecPrice)).done());
-  const totalCost = N(math.add(D(cardPrice), D(longTermElecCost)));
-  return safeDiv(gpuHashrate, totalCost);
-}
-
-/** 长期电费 */
-export function calcLongTermElecCost(powerCons: number, effMonths: number, elecPrice: number): number {
-  const powerKW = N(math.divide(D(powerCons), D(1000)));
-  const totalHours = N(math.chain(D(effMonths)).multiply(D(30)).multiply(D(24)).done());
-  return N(math.chain(D(powerKW)).multiply(D(totalHours)).multiply(D(elecPrice)).done());
 }
 
 /** 关机币价 (USDT) */

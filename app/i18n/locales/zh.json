@@ -38,10 +38,6 @@
   "costEffDesc": "每单位货币能买到的算力",
   "powerEff": "能效比",
   "powerEffDesc": "每瓦特功耗产出的算力",
-  "longTermEff": "长期运营性价比",
-  "longTermEffDesc": "算力 ÷ (采购价 + 周期电费)",
-  "effPeriod": "电费周期",
-  "tcoElectricity": "周期电费",
   "effHigher": "越高越好",
   "effSingleCard": "以下指标仅基于单张显卡参数计算，与显卡数量无关。",
   "tipTotalHashrate": "单卡算力 × 显卡数量",
@@ -84,9 +80,6 @@
   "disclaimer": "所有计算结果基于当前可获取的实时数据，仅供参考，不构成投资建议。实际收益受网络难度波动、币价变化等因素影响，可能与预估存在差异。",
   "tipCostEff": "每单位货币投入获得的算力。值越高说明性价比越好。公式：显卡算力 ÷ 显卡买入价",
   "tipPowerEff": "每瓦功率产出的算力。值越高说明能效越好。公式：显卡算力 ÷ 单卡功耗",
-  "tipLongTermEff": "综合硬件成本和运营期电费后的算力产出比。反映长期运营的真实性价比。公式：显卡算力 ÷ (买入价 + 运营期总电费)",
-  "tipEffPeriod": "选择运营时长，用于计算累计电费和长期性价比。",
-  "tipTcoElectricity": "运营周期内的总电费。公式：功率(kW) × 运营时长(h) × 电价",
   "themeLight": "白天模式",
   "themeDark": "夜晚模式",
   "themeSystem": "跟随系统",
@@ -128,5 +121,6 @@
   "poolBlocks24h": "24h 出块",
   "poolShare": "全网占比",
   "poolYield": "矿池时产",
-  "poolFetchError": "矿池数据加载失败"
+  "poolFetchError": "矿池数据加载失败",
+  "controlledByPool": "由矿池控制"
 }

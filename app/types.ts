@@ -59,8 +59,6 @@ export interface MiningResults {
   resMonths: number;
   costEff: number;
   powerEff: number;
-  longTermEff: number;
-  longTermElecCost: number;
   shutdownPrice: number;
   dailyROI: number;
   annualizedROI: number;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useI18n } from './i18n/context';
 import { useTheme } from './theme/context';
 import { useMiningCalculator } from './hooks/useMiningCalculator';
@@ -63,12 +63,17 @@ export default function MinerCalculator({ initialData }: Props) {
     selectedPool: null, // 由 usePoolData hook 管理
   });
 
-  const [effMonths, setEffMonths] = useState(6);
+  // 保存选择矿池前的用户自定义 poolFee
+  const prePoolFeeRef = useRef<number | null>(null);
 
   // 矿池选择回调
   const handlePoolChange = useCallback((pool: PoolData | null) => {
     setInputs((prev) => {
       if (pool) {
+        // 首次选择矿池时，保存用户的自定义 poolFee
+        if (prePoolFeeRef.current === null) {
+          prePoolFeeRef.current = prev.poolFee;
+        }
         // 计算矿池 yield
         const dailyOutput = pool.reward_24h_grains / 1e8;
         const hashrateTH = pool.reported_hashrate_hps ? pool.reported_hashrate_hps / 1e12 : 0;
@@ -81,10 +86,13 @@ export default function MinerCalculator({ initialData }: Props) {
           selectedPool: pool.slug,
         };
       }
-      // 选择全网数据时，恢复初始 yield
+      // 取消选择时，恢复原始 poolFee 和初始 yield
+      const restoredFee = prePoolFeeRef.current ?? prev.poolFee;
+      prePoolFeeRef.current = null;
       return {
         ...prev,
         hashrateYield: initialData.hashrateYield,
+        poolFee: restoredFee,
         selectedPool: null,
       };
     });
@@ -109,7 +117,7 @@ export default function MinerCalculator({ initialData }: Props) {
     } catch (e) {}
   }, [inputs]);
 
-  const results = useMiningCalculator(inputs, effMonths, currency);
+  const results = useMiningCalculator(inputs, currency);
   const sync = useRealtimeSync(initialData.priceSource, setInputs, initialData.networkStats, initialData.priceHistory, inputs.selectedPool);
   const charts = useChartManager(resolvedTheme, t);
 
@@ -181,6 +189,12 @@ export default function MinerCalculator({ initialData }: Props) {
                 t={t}
                 onInputChange={handleInputChange}
               />
+              <div className="border-t border-edge my-4" />
+              <EfficiencyPanel
+                results={results}
+                currency={currency}
+                t={t}
+              />
             </Panel>
           </div>
 
@@ -238,14 +252,6 @@ export default function MinerCalculator({ initialData }: Props) {
               <PriceChart
                 priceHistory={sync.priceHistory}
                 resolvedTheme={resolvedTheme}
-                t={t}
-              />
-              <div className="border-t border-edge my-4" />
-              <EfficiencyPanel
-                results={results}
-                effMonths={effMonths}
-                setEffMonths={setEffMonths}
-                currency={currency}
                 t={t}
               />
             </Panel>

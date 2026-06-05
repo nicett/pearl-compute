@@ -17,6 +17,8 @@ export default function NetworkInputs({
   t,
   onInputChange,
 }: NetworkInputsProps) {
+  const isPoolSelected = inputs.selectedPool != null;
+
   return (
     <div className="space-y-4">
       <div className="input-group relative">
@@ -38,13 +40,18 @@ export default function NetworkInputs({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="input-group">
-          <label>{t('poolFee')}</label>
+          <label className={isPoolSelected ? 'text-muted/50' : ''}>
+            {t('poolFee')}
+            {isPoolSelected && <span className="ml-1 text-[9px] text-accent/50">({t('controlledByPool')})</span>}
+          </label>
           <input
             type="number"
             value={inputs.poolFee}
             step="0.1"
             min="0"
             max="50"
+            readOnly={isPoolSelected}
+            className={isPoolSelected ? 'bg-surface text-muted cursor-not-allowed border-edge' : ''}
             onChange={(e) => onInputChange('poolFee', e.target.value)}
           />
         </div>
