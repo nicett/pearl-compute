@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npx @cloudflare/next-on-pages",
+  "outputDirectory": ".vercel/output/static",
+  "framework": "nextjs"
+}
