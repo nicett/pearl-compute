@@ -71,24 +71,56 @@ async function getPoolData() {
   return cachedPools;
 }
 
-export async function GET() {
-  try {
-    const pools = await getPoolData();
+export async function GET(request: Request) {
+  const clientHeaders = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'CDN-Cache-Control': 'no-store',
+    'Cloudflare-CDN-Cache-Control': 'no-store',
+  };
 
-    const headers = {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'CDN-Cache-Control': 'no-store',
-      'Cloudflare-CDN-Cache-Control': 'no-store',
-    };
+  try {
+    // 构造缓存 key（去掉前端 ?t= 时间戳）
+    const cacheUrl = new URL(request.url);
+    cacheUrl.search = '';
+    const cacheKey = cacheUrl.toString();
+
+    // ---- 1. 尝试从 Edge Cache 读取 ----
+    let edgeCache: Cache | null = null;
+    try {
+      edgeCache = (caches as unknown as { default: Cache }).default;
+      const cached = await edgeCache.match(cacheKey);
+      if (cached) {
+        const body = await cached.json();
+        return NextResponse.json({ ...body, cached: true }, { headers: clientHeaders });
+      }
+    } catch {}
+
+    // ---- 2. 缓存未命中 — 从 PRLScan API 获取 ----
+    const pools = await getPoolData();
 
     if (!pools) {
       return NextResponse.json(
         { error: 'Failed to fetch pools data' },
-        { status: 502, headers }
+        { status: 502, headers: clientHeaders }
       );
     }
 
-    return NextResponse.json({ pools }, { headers });
+    const responseData = { pools };
+
+    // ---- 3. 写入 Edge Cache ----
+    if (edgeCache) {
+      try {
+        const cacheResp = new Response(JSON.stringify(responseData), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': `s-maxage=${CACHE_TTL / 1000}`,
+          },
+        });
+        await edgeCache.put(cacheKey, cacheResp);
+      } catch {}
+    }
+
+    return NextResponse.json(responseData, { headers: clientHeaders });
   } catch (error) {
     console.error('Pools API route error:', error);
     return NextResponse.json(

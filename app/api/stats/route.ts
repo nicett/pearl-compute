@@ -441,15 +441,34 @@ async function doFetchAndCache(now: number): Promise<CachedData | null> {
   return poolData;
 }
 
-export async function GET() {
-  try {
-    const data = await getFreshData();
+export async function GET(request: Request) {
+  const clientHeaders = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'CDN-Cache-Control': 'no-store',
+    'Cloudflare-CDN-Cache-Control': 'no-store',
+  };
 
-    const headers = {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'CDN-Cache-Control': 'no-store',
-      'Cloudflare-CDN-Cache-Control': 'no-store',
-    };
+  try {
+    // 构造缓存 key（去掉前端 ?t= 时间戳，确保命中同一条缓存）
+    const cacheUrl = new URL(request.url);
+    cacheUrl.search = '';
+    const cacheKey = cacheUrl.toString();
+
+    // ---- 1. 尝试从 Edge Cache 读取（前端请求不触发任何外部 API 调用） ----
+    let edgeCache: Cache | null = null;
+    try {
+      edgeCache = (caches as unknown as { default: Cache }).default;
+      const cached = await edgeCache.match(cacheKey);
+      if (cached) {
+        const body = await cached.json();
+        return NextResponse.json({ ...body, cached: true }, { headers: clientHeaders });
+      }
+    } catch {
+      // Edge Cache 不可用（本地 dev 等），降级到直接获取
+    }
+
+    // ---- 2. 缓存未命中 — 从外部 API 获取数据 ----
+    const data = await getFreshData();
 
     if (!data) {
       return NextResponse.json(
@@ -459,11 +478,24 @@ export async function GET() {
             ? Math.floor(lastSuccessfulFetchTime / 1000)
             : null,
         },
-        { status: 502, headers }
+        { status: 502, headers: clientHeaders }
       );
     }
 
-    return NextResponse.json(data, { headers });
+    // ---- 3. 写入 Edge Cache（后续前端请求将直接命中，不再调用外部 API） ----
+    if (edgeCache) {
+      try {
+        const cacheResp = new Response(JSON.stringify(data), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': `s-maxage=${CACHE_TTL / 1000}`,
+          },
+        });
+        await edgeCache.put(cacheKey, cacheResp);
+      } catch {}
+    }
+
+    return NextResponse.json(data, { headers: clientHeaders });
   } catch (error) {
     console.error('API route error:', error);
     return NextResponse.json(
