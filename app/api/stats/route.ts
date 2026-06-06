@@ -16,11 +16,7 @@ interface PriceData {
   priceChange?: string | null;
 }
 
-interface PriceHistoryPoint {
-  ts: number;
-  price: number;
-  volume: number | null;
-}
+
 
 interface PoolData {
   coins?: Array<{
@@ -41,7 +37,6 @@ interface CachedData extends PoolData {
   cached?: boolean;
   stale?: boolean;
   // Phase 1 扩展
-  priceHistory: PriceHistoryPoint[];
   networkStats: {
     networkHashrate: string;
     networkHashrateTH: number;
@@ -56,12 +51,7 @@ let lastFetchTime = 0;
 let lastSuccessfulFetchTime = 0; // 最后一次成功获取数据的时间
 const CACHE_TTL = 20 * 1000; // 20 秒
 
-// 价格历史缓冲区（约 24h @ 20s 间隔 ≈ 4320 条，上限 8640 留有余量）
-const MAX_HISTORY_POINTS = 8640;
-const priceHistoryBuffer: PriceHistoryPoint[] = [];
 
-// 并发请求锁：多个请求同时穿透缓存时，只让第一个发起实际 fetch，其余等待同一个 Promise
-let inflightRequest: Promise<CachedData | null> | null = null;
 
 // 从 Pearl OTC 结算 API 获取 PRL 最新成交价
 async function fetchPrlPrice() {
@@ -307,27 +297,17 @@ async function fetchPoolStats() {
   }
 }
 
-// 获取最新数据（带缓存 + 并发锁）
+// 获取最新数据（带内存缓存，Edge Runtime 下为尽力缓存）
 async function getFreshData() {
   const now = Date.now();
 
-  // 缓存未过期，直接返回
+  // 缓存未过期，直接返回（同一 isolate 内有效）
   if (cachedData && now - lastFetchTime < CACHE_TTL) {
     return { ...cachedData, cached: true };
   }
 
-  // 如果已有请求在飞，等待同一个 Promise（避免重复 fetch）
-  if (inflightRequest) {
-    return inflightRequest;
-  }
-
-  // 发起新请求并锁定
-  inflightRequest = doFetchAndCache(now);
-  try {
-    return await inflightRequest;
-  } finally {
-    inflightRequest = null;
-  }
+  // 发起新请求
+  return await doFetchAndCache(now);
 }
 
 // 实际的 fetch + 缓存逻辑（从 getFreshData 中拆出）
@@ -398,20 +378,7 @@ async function doFetchAndCache(now: number): Promise<CachedData | null> {
     poolData.exchangeRateUpdateTime = cachedData.exchangeRateUpdateTime;
   }
 
-  // ---- Phase 1: 价格历史环形缓冲 ----
-  const currentPrice = defaultPrice || cachedData?.coins?.[0]?.price || 0;
-  if (currentPrice > 0) {
-    const point: PriceHistoryPoint = {
-      ts: Math.floor(now / 1000),
-      price: currentPrice,
-      volume: safetradeData?.volume ?? null,
-    };
-    priceHistoryBuffer.push(point);
-    // 淘汰超出上限的旧数据
-    if (priceHistoryBuffer.length > MAX_HISTORY_POINTS) {
-      priceHistoryBuffer.splice(0, priceHistoryBuffer.length - MAX_HISTORY_POINTS);
-    }
-  }
+
 
   // ---- 网络统计（优先使用 PRLScan 全网数据，降级到矿池数据） ----
   if (networkStatsData) {
@@ -461,8 +428,7 @@ async function doFetchAndCache(now: number): Promise<CachedData | null> {
     };
   }
 
-  // 注入价格历史（返回完整缓冲区）
-  poolData.priceHistory = [...priceHistoryBuffer];
+
 
   // 记录同步时间（Unix 时间戳，秒）
   lastSuccessfulFetchTime = now;

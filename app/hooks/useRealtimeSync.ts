@@ -130,12 +130,23 @@ export function useRealtimeSync(
         setLastSyncTs(lastSyncTsNew);
       }
 
-      // 更新网络统计和价格历史
+      // 更新网络统计
       if (data.networkStats) {
         setNetworkStats(data.networkStats);
       }
-      if (data.priceHistory) {
-        setPriceHistory(data.priceHistory);
+
+      // 客户端累积价格历史（Edge Runtime 无法维持服务端缓冲区）
+      if (selectedPrice && selectedPrice > 0) {
+        setPriceHistory((prev) => {
+          const newPoint: PriceHistoryPoint = {
+            ts: Math.floor(Date.now() / 1000),
+            price: selectedPrice,
+            volume: null,
+          };
+          const updated = [...prev, newPoint];
+          // 保留最近约 24h 的数据（4320 条 @ 20s 间隔）
+          return updated.length > 4320 ? updated.slice(updated.length - 4320) : updated;
+        });
       }
 
       setSyncStatus('success');

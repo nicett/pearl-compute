@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "npx @cloudflare/next-on-pages",
+    "build:cf": "next build && npx @cloudflare/next-on-pages",
     "deploy:cf": "npx wrangler pages deploy .vercel/output/static --project-name pearl-compute",
     "start": "next start",
     "lint": "next lint",
