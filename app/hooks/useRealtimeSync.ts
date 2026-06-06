@@ -139,6 +139,8 @@ export function useRealtimeSync(
         return false;
       }
 
+      const selectedPrice = processApiData(data);
+
       // 不再在前端累加单点数据
       // 将成功获取的实时数据写入 localStorage 缓存（保留之前缓存的图表数据）
       try {
