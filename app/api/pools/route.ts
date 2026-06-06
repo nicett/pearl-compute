@@ -13,7 +13,7 @@ async function fetchPools() {
   const timeout = setTimeout(() => controller.abort(), 12000);
   try {
     const response = await fetch('https://api.prlscan.com/v1/pools', {
-      signal: controller.signal, cache: 'no-store',
+      signal: controller.signal,
     });
     if (!response.ok) {
       console.error(`[fetchPools] upstream HTTP ${response.status}`);

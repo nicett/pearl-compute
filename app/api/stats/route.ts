@@ -15,7 +15,7 @@ async function fetchPrlPrice() {
   try {
     const response = await fetch(
       'https://pearl-otc.com/api/stats/settlements?limit=1',
-      { signal: controller.signal, cache: 'no-store' }
+      { signal: controller.signal }
     );
     if (!response.ok) return null;
     const data = await response.json();
@@ -43,7 +43,6 @@ async function fetchSafetradePrice() {
       'https://safe.trade/api/v2/trade/public/tickers/prlusdt',
       {
         signal: controller.signal,
-        cache: 'no-store',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Accept': 'application/json',
@@ -81,7 +80,6 @@ async function fetchOkxPrice() {
       'https://web3.ouyishozyk.com/zh-hans/token/ethereum/0x07696dcab55e62cfef953666b29fe1970518cb00',
       {
         signal: controller.signal,
-        cache: 'no-store',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Accept': 'text/html',
@@ -117,7 +115,7 @@ async function fetchExchangeRate() {
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const response = await fetch('https://open.er-api.com/v6/latest/USD', {
-      signal: controller.signal, cache: 'no-store',
+      signal: controller.signal,
     });
     if (!response.ok) return null;
     const data = await response.json();
@@ -143,7 +141,7 @@ async function fetchNetworkStats() {
   try {
     const response = await fetch(
       `https://api.prlscan.com/v1/analytics/summary?window_blocks=50&_t=${Date.now()}`,
-      { signal: controller.signal, cache: 'no-store' }
+      { signal: controller.signal }
     );
     if (!response.ok) return null;
     const data = await response.json();
