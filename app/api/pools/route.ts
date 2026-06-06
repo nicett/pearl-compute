@@ -38,10 +38,8 @@ async function fetchPools(): Promise<PoolItem[] | null> {
 
     const data: PoolsApiResponse = await response.json();
 
-    // 过滤有效矿池（有算力或有出块）
-    const validPools = data.items.filter(
-      (p) => (p.reported_hashrate_hps && p.reported_hashrate_hps > 0) || p.blocks_24h > 0
-    );
+    // 过滤有效矿池（24小时内有出块）
+    const validPools = data.items.filter((p) => p.blocks_24h > 0);
 
     // 按 24h 出块数降序排序
     validPools.sort((a, b) => b.blocks_24h - a.blocks_24h);
