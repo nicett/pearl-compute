@@ -1,6 +1,9 @@
 import MinerCalculator from './MinerCalculator';
 import { InitialData } from './types';
 
+// Edge runtime: Cloudflare Pages 生产环境使用
+export const runtime = 'edge';
+
 // 服务器端预取数据
 async function getInitialData(): Promise<InitialData> {
   try {
