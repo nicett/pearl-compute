@@ -12,7 +12,7 @@ export default function InfoIcon({ tooltip, position = 'right' }: InfoIconProps)
 
   return (
     <div className="group relative inline-flex items-center">
-      <span className="text-xs text-muted/30 opacity-0 group-hover:opacity-100 transition-opacity cursor-help font-mono">
+      <span className="text-xs text-muted/50 group-hover:text-muted transition-colors cursor-help font-mono">
         [?]
       </span>
       <div className={`tooltip-industrial ${posClass} mb-2 w-56 text-xs`}>
