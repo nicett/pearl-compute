@@ -1,6 +1,7 @@
 'use client';
 
 import { Currency, MiningInputs, MiningResults } from '../types';
+import InfoIcon from './InfoIcon';
 
 interface NetworkInputsProps {
   inputs: MiningInputs;
@@ -40,9 +41,9 @@ export default function NetworkInputs({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="input-group">
-          <label className={isPoolSelected ? 'text-muted/50' : ''}>
+          <label className="flex items-center gap-1">
             {t('poolFee')}
-            {isPoolSelected && <span className="ml-1 text-[9px] text-accent/50">({t('controlledByPool')})</span>}
+            {isPoolSelected && <InfoIcon tooltip={t('controlledByPool')} />}
           </label>
           <input
             type="number"
