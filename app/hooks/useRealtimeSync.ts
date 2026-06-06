@@ -30,7 +30,7 @@ export function useRealtimeSync(
   initialPriceHistory?: PriceHistoryPoint[],
   selectedPool?: string | null
 ): SyncState & SyncActions {
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('success');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('loading');
   const [lastSyncTs, setLastSyncTs] = useState<number | null>(null);
   const [countdown, setCountdown] = useState(20);
   const [isStale, setIsStale] = useState(false);
@@ -42,6 +42,9 @@ export function useRealtimeSync(
   );
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>(initialPriceHistory || []);
 
+  const priceHistoryRef = useRef<PriceHistoryPoint[]>(priceHistory);
+  useEffect(() => { priceHistoryRef.current = priceHistory; }, [priceHistory]);
+
   // 选择价格来源
   const handleSelectPrice = useCallback(
     (name: string, price: number) => {
@@ -51,6 +54,73 @@ export function useRealtimeSync(
     },
     [onInputsUpdate]
   );
+
+  // 内部：处理后端返回的 JSON 数据
+  const processApiData = useCallback((data: any) => {
+    setIsStale(data.stale === true);
+
+    const coinData = data.coins?.[0] || {};
+    const exchangeRate = data.exchangeRate || null;
+    const lastSyncTsNew = data.lastSyncTime || null;
+
+    // 解析多价格来源
+    const priceList: PriceSource[] = [];
+    if (data.prices?.pearlOtc?.price) {
+      priceList.push({ name: 'Pearl OTC', price: data.prices.pearlOtc.price });
+    }
+    if (data.prices?.safetrade?.price) {
+      priceList.push({ name: 'SafeTrade', price: data.prices.safetrade.price });
+    }
+    if (data.prices?.okx?.price) {
+      priceList.push({ name: 'OKX Web3', price: data.prices.okx.price });
+    }
+    setAllPrices(priceList);
+
+    // 根据用户选中的来源决定价格
+    const selectedPrice =
+      priceList.find((p) => p.name === selectedPriceSource)?.price ||
+      priceList.find((p) => p.name === 'Pearl OTC')?.price ||
+      priceList[0]?.price ||
+      coinData.price ||
+      null;
+    const sourceName =
+      priceList.find((p) => p.name === selectedPriceSource)?.name ||
+      priceList.find((p) => p.name === 'Pearl OTC')?.name ||
+      priceList[0]?.name ||
+      data.priceSource ||
+      'unknown';
+
+    // 使用 API 返回的 hashrateYield
+    const yieldPerTH = data.networkStats?.hashrateYield || 0;
+
+    // 更新输入值
+    onInputsUpdate((prev) => {
+      const newInputs = { ...prev };
+      // 只在未选择矿池时更新 yield
+      if (!prev.selectedPool && yieldPerTH > 0 && isFinite(yieldPerTH)) {
+        newInputs.hashrateYield = yieldPerTH;
+      }
+      if (selectedPrice) {
+        newInputs.coinPrice = selectedPrice;
+      }
+      if (exchangeRate) {
+        newInputs.exchangeRate = exchangeRate;
+      }
+      return newInputs;
+    });
+
+    if (selectedPrice) {
+      setPriceSource(sourceName);
+    }
+    if (lastSyncTsNew) {
+      setLastSyncTs(lastSyncTsNew);
+    }
+    if (data.networkStats) {
+      setNetworkStats(data.networkStats);
+    }
+
+    return selectedPrice;
+  }, [selectedPriceSource, onInputsUpdate]);
 
   // 从 API 同步数据
   const fetchRealtimeData = useCallback(async (): Promise<boolean> => {
@@ -69,85 +139,28 @@ export function useRealtimeSync(
         return false;
       }
 
-      setIsStale(data.stale === true);
+      const selectedPrice = processApiData(data);
 
-      const coinData = data.coins?.[0] || {};
-      const exchangeRate = data.exchangeRate || null;
-      const lastSyncTsNew = data.lastSyncTime || null;
-
-      // 解析多价格来源
-      const priceList: PriceSource[] = [];
-      if (data.prices?.pearlOtc?.price) {
-        priceList.push({ name: 'Pearl OTC', price: data.prices.pearlOtc.price });
-      }
-      if (data.prices?.safetrade?.price) {
-        priceList.push({ name: 'SafeTrade', price: data.prices.safetrade.price });
-      }
-      if (data.prices?.okx?.price) {
-        priceList.push({ name: 'OKX Web3', price: data.prices.okx.price });
-      }
-      setAllPrices(priceList);
-
-      // 根据用户选中的来源决定价格
-      const selectedPrice =
-        priceList.find((p) => p.name === selectedPriceSource)?.price ||
-        priceList.find((p) => p.name === 'Pearl OTC')?.price ||
-        priceList[0]?.price ||
-        coinData.price ||
-        null;
-      const sourceName =
-        priceList.find((p) => p.name === selectedPriceSource)?.name ||
-        priceList.find((p) => p.name === 'Pearl OTC')?.name ||
-        priceList[0]?.name ||
-        data.priceSource ||
-        'unknown';
-
-      // 使用 API 返回的 hashrateYield（基于 PRLScan 全网数据）
-      // 当用户选择了矿池时，不更新 hashrateYield（由矿池数据决定）
-      const yieldPerTH = data.networkStats?.hashrateYield || 0;
-
-      // 更新输入值
-      onInputsUpdate((prev) => {
-        const newInputs = { ...prev };
-        // 只在未选择矿池时更新 yield
-        if (!prev.selectedPool && yieldPerTH > 0 && isFinite(yieldPerTH)) {
-          newInputs.hashrateYield = yieldPerTH;
-        }
-        if (selectedPrice) {
-          newInputs.coinPrice = selectedPrice;
-        }
-        if (exchangeRate) {
-          newInputs.exchangeRate = exchangeRate;
-        }
-        return newInputs;
-      });
-
-      if (selectedPrice) {
-        setPriceSource(sourceName);
-      }
-
-      if (lastSyncTsNew) {
-        setLastSyncTs(lastSyncTsNew);
-      }
-
-      // 更新网络统计
-      if (data.networkStats) {
-        setNetworkStats(data.networkStats);
-      }
-
-      // 客户端累积价格历史（Edge Runtime 无法维持服务端缓冲区）
+      let newHistory = priceHistoryRef.current;
       if (selectedPrice && selectedPrice > 0) {
-        setPriceHistory((prev) => {
-          const newPoint: PriceHistoryPoint = {
-            ts: Math.floor(Date.now() / 1000),
-            price: selectedPrice,
-            volume: null,
-          };
-          const updated = [...prev, newPoint];
-          // 保留最近约 24h 的数据（4320 条 @ 20s 间隔）
-          return updated.length > 4320 ? updated.slice(updated.length - 4320) : updated;
-        });
+        const newPoint: PriceHistoryPoint = {
+          ts: Math.floor(Date.now() / 1000),
+          price: selectedPrice,
+          volume: null,
+        };
+        const updated = [...newHistory, newPoint];
+        newHistory = updated.length > 4320 ? updated.slice(updated.length - 4320) : updated;
+        setPriceHistory(newHistory);
       }
+
+      // 将成功获取的数据写入 localStorage 缓存
+      try {
+        localStorage.setItem('miner_calc_cache', JSON.stringify({
+          ts: Date.now(),
+          apiData: data,
+          priceHistory: newHistory
+        }));
+      } catch (e) {}
 
       setSyncStatus('success');
       return true;
@@ -156,33 +169,67 @@ export function useRealtimeSync(
       setSyncStatus('error');
       return false;
     }
-  }, [selectedPriceSource, onInputsUpdate]);
+  }, [processApiData]);
 
-  // 倒计时逻辑
+  // 倒计时和初始化逻辑
   const fetchingRef = useRef(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      let usedCache = false;
+
+      // 1. 尝试读取本地缓存
+      try {
+        const cachedStr = localStorage.getItem('miner_calc_cache');
+        if (cachedStr) {
+          const cached = JSON.parse(cachedStr);
+          const ageMs = Date.now() - cached.ts;
+          // 如果缓存是 20 秒内的，则直接使用
+          if (ageMs >= 0 && ageMs < 20000) {
+            processApiData(cached.apiData);
+            if (cached.priceHistory) {
+              setPriceHistory(cached.priceHistory);
+            }
+            setCountdown(20 - Math.floor(ageMs / 1000));
+            setSyncStatus('success');
+            usedCache = true;
+          }
+        }
+      } catch (e) {
+        // ignore parse error
+      }
+
+      // 2. 如果没有有效缓存，则立即发起请求（而不是等 20 秒）
+      if (!usedCache) {
+        fetchingRef.current = true;
+        fetchRealtimeData()
+          .finally(() => {
+            fetchingRef.current = false;
+            setCountdown(20);
+          });
+      }
+    }
+
+    // 3. 启动定时器：处理后续的倒计时和刷新
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1 && !fetchingRef.current) {
           fetchingRef.current = true;
           fetchRealtimeData()
-            .then(() => {
+            .finally(() => {
               fetchingRef.current = false;
-              setCountdown(20);
-            })
-            .catch(() => {
-              fetchingRef.current = false;
-              setCountdown(20);
+              setCountdown(20); // 请求完成后重置倒计时
             });
-          return 0;
+          return 0; // 请求期间倒计时保持 0
         }
         return prev > 0 ? prev - 1 : 0;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [fetchRealtimeData]);
+  }, [fetchRealtimeData, processApiData]);
 
   return {
     syncStatus,
