@@ -84,6 +84,25 @@ export default function PriceChart({ priceHistory, resolvedTheme, t }: PriceChar
       chartRef.current = chart;
       seriesRef.current = series;
 
+      // 渲染初始数据
+      if (priceHistory.length > 0) {
+        const maxPoints = 300;
+        let displayData = priceHistory;
+        if (priceHistory.length > maxPoints) {
+          const step = Math.ceil(priceHistory.length / maxPoints);
+          displayData = priceHistory.filter((_, i) => i % step === 0);
+          if (displayData[displayData.length - 1] !== priceHistory[priceHistory.length - 1]) {
+            displayData.push(priceHistory[priceHistory.length - 1]);
+          }
+        }
+        const lineData = displayData.map((p) => ({
+          time: p.ts as any,
+          value: p.price,
+        }));
+        series.setData(lineData);
+        chart.timeScale().fitContent();
+      }
+
       // 自适应容器大小
       const ro = new ResizeObserver((entries) => {
         for (const entry of entries) {
