@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { parseNetworkHashrate } from '../../utils';
 
 // Edge runtime: Cloudflare Pages 使用
 export const runtime = 'edge';
@@ -163,32 +162,13 @@ async function fetchNetworkStats() {
   }
 }
 
-/** 代理矿池 API 请求 */
-async function fetchPoolStats() {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-  try {
-    const response = await fetch('https://pearl.alphapool.tech/api/stats', {
-      signal: controller.signal, cache: 'no-store',
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    if (!data.coins?.[0]?.reward) throw new Error('Invalid pool data');
-    return data;
-  } catch (e) {
-    console.error('[fetchPoolStats]', e);
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
+
 
 // ── 数据组装（任何单个 API 失败不影响整体） ──
 
 async function assembleData(): Promise<Record<string, unknown> | null> {
-  // 并行请求所有数据源
-  const [poolData, priceData, safetradeData, okxData, exchangeData, networkStatsData] = await Promise.all([
-    fetchPoolStats(),
+  // 并行请求所有数据源（不再依赖 alphapool，全部使用 PRLScan + 独立价格源）
+  const [priceData, safetradeData, okxData, exchangeData, networkStatsData] = await Promise.all([
     fetchPrlPrice(),
     fetchSafetradePrice(),
     fetchOkxPrice(),
@@ -198,19 +178,19 @@ async function assembleData(): Promise<Record<string, unknown> | null> {
 
   // 调试日志
   console.log('[sync] results:', {
-    pool: !!poolData, pearl: !!priceData, safe: !!safetradeData,
+    pearl: !!priceData, safe: !!safetradeData,
     okx: !!okxData, rate: !!exchangeData, net: !!networkStatsData,
   });
 
   // 至少需要一个数据源成功
-  if (!poolData && !priceData && !safetradeData && !okxData && !networkStatsData) {
+  if (!priceData && !safetradeData && !okxData && !networkStatsData) {
     console.error('[sync] ALL data sources failed');
     return null;
   }
 
-  // 基础数据对象（矿池数据作为 base，失败则用空壳）
+  // 基础数据对象
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: any = poolData || { coins: [{}] };
+  const result: any = { coins: [{}] };
 
   // ── 注入价格数据（多来源） ──
   const prices: Record<string, unknown> = {};
@@ -232,7 +212,7 @@ async function assembleData(): Promise<Record<string, unknown> | null> {
     result.exchangeRateUpdateTime = exchangeData.updateTime;
   }
 
-  // ── 注入网络统计（优先 PRLScan，降级矿池数据） ──
+  // ── 注入网络统计（PRLScan 数据） ──
   if (networkStatsData) {
     const hashrateTH = networkStatsData.networkHashrateTH;
     let networkHashrateStr: string;
@@ -252,22 +232,6 @@ async function assembleData(): Promise<Record<string, unknown> | null> {
       dailyGlobalOutput: networkStatsData.dailyGlobalOutput,
       avgBlockTime,
       hashrateYield: hashrateTH > 0 ? networkStatsData.dailyGlobalOutput / 24 / hashrateTH : 0,
-    };
-  } else if (poolData) {
-    // 降级：使用矿池数据
-    const coinData = poolData.coins?.[0] || {};
-    const blockReward = parseFloat(coinData.reward) || 2681.69;
-    const networkHashStr = coinData.network_hash || '';
-    const networkHashrateTH = parseNetworkHashrate(networkHashStr);
-    const blocksPerDay = 86400 / 124.77;
-    const dailyGlobalOutput = Math.round(blocksPerDay * blockReward);
-    result.networkStats = {
-      networkHashrate: networkHashStr || 'N/A',
-      networkHashrateTH,
-      blockReward,
-      dailyGlobalOutput,
-      avgBlockTime: coinData.ttfLabel || 'N/A',
-      hashrateYield: networkHashrateTH > 0 ? dailyGlobalOutput / 24 / networkHashrateTH : 0,
     };
   } else {
     result.networkStats = {
