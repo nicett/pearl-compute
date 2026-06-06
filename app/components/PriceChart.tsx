@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { PriceHistoryPoint } from '../types';
 
 interface PriceChartProps {
@@ -13,96 +13,101 @@ export default function PriceChart({ priceHistory, resolvedTheme, t }: PriceChar
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<any>(null);
   const seriesRef = useRef<any>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   const isDark = resolvedTheme === 'dark';
 
-  // 创建图表
-  const initChart = useCallback(async () => {
-    if (!containerRef.current) return;
+  // 图表只初始化一次，不依赖 isDark（主题变化通过 applyOptions 更新）
+  useEffect(() => {
+    let aborted = false;
 
-    // 动态导入（SSR 安全）
-    const { createChart, ColorType, AreaSeries } = await import('lightweight-charts');
+    async function init() {
+      if (!containerRef.current) return;
 
-    // 清理旧图表
-    if (chartRef.current) {
-      chartRef.current.remove();
-      chartRef.current = null;
+      const { createChart, ColorType, AreaSeries } = await import('lightweight-charts');
+
+      // 异步导入完成后，如果 effect 已被清理则不继续
+      if (aborted) return;
+
+      const dark = document.documentElement.classList.contains('dark');
+
+      const chart = createChart(containerRef.current!, {
+        width: containerRef.current!.clientWidth,
+        height: 220,
+        layout: {
+          background: { type: ColorType.Solid, color: dark ? '#141414' : '#ffffff' },
+          textColor: dark ? '#666666' : '#999999',
+          fontFamily: '"IBM Plex Mono", monospace',
+          fontSize: 11,
+          attributionLogo: false,
+        },
+        grid: {
+          vertLines: { color: dark ? '#1a1a1a' : '#f0f0f0' },
+          horzLines: { color: dark ? '#1a1a1a' : '#f0f0f0' },
+        },
+        crosshair: {
+          vertLine: {
+            color: dark ? '#333333' : '#cccccc',
+            width: 1,
+            style: 2,
+            labelBackgroundColor: dark ? '#222222' : '#e0e0e0',
+          },
+          horzLine: {
+            color: dark ? '#333333' : '#cccccc',
+            width: 1,
+            style: 2,
+            labelBackgroundColor: dark ? '#222222' : '#e0e0e0',
+          },
+        },
+        rightPriceScale: {
+          borderColor: dark ? '#222222' : '#e0e0e0',
+          scaleMargins: { top: 0.1, bottom: 0.1 },
+        },
+        timeScale: {
+          borderColor: dark ? '#222222' : '#e0e0e0',
+          timeVisible: true,
+          secondsVisible: false,
+        },
+      });
+
+      // 创建面积系列
+      const series = chart.addSeries(AreaSeries, {
+        topColor: dark ? 'rgba(0, 229, 255, 0.12)' : 'rgba(0, 184, 212, 0.12)',
+        bottomColor: dark ? 'rgba(0, 229, 255, 0.01)' : 'rgba(0, 184, 212, 0.01)',
+        lineColor: dark ? '#00e5ff' : '#00b8d4',
+        lineWidth: 2,
+        crosshairMarkerRadius: 4,
+        crosshairMarkerBorderColor: dark ? '#00e5ff' : '#00b8d4',
+        crosshairMarkerBackgroundColor: dark ? '#141414' : '#ffffff',
+      });
+
+      chartRef.current = chart;
+      seriesRef.current = series;
+
+      // 自适应容器大小
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width } = entry.contentRect;
+          chart.applyOptions({ width });
+        }
+      });
+      ro.observe(containerRef.current!);
+      resizeObserverRef.current = ro;
     }
 
-    const chart = createChart(containerRef.current, {
-      width: containerRef.current.clientWidth,
-      height: 220,
-      layout: {
-        background: { type: ColorType.Solid, color: isDark ? '#141414' : '#ffffff' },
-        textColor: isDark ? '#666666' : '#999999',
-        fontFamily: '"IBM Plex Mono", monospace',
-        fontSize: 11,
-        attributionLogo: false,
-      },
-      grid: {
-        vertLines: { color: isDark ? '#1a1a1a' : '#f0f0f0' },
-        horzLines: { color: isDark ? '#1a1a1a' : '#f0f0f0' },
-      },
-      crosshair: {
-        vertLine: {
-          color: isDark ? '#333333' : '#cccccc',
-          width: 1,
-          style: 2,
-          labelBackgroundColor: isDark ? '#222222' : '#e0e0e0',
-        },
-        horzLine: {
-          color: isDark ? '#333333' : '#cccccc',
-          width: 1,
-          style: 2,
-          labelBackgroundColor: isDark ? '#222222' : '#e0e0e0',
-        },
-      },
-      rightPriceScale: {
-        borderColor: isDark ? '#222222' : '#e0e0e0',
-        scaleMargins: { top: 0.1, bottom: 0.1 },
-      },
-      timeScale: {
-        borderColor: isDark ? '#222222' : '#e0e0e0',
-        timeVisible: true,
-        secondsVisible: false,
-      },
-    });
-
-    // 创建面积系列
-    const series = chart.addSeries(AreaSeries, {
-      topColor: isDark ? 'rgba(0, 229, 255, 0.12)' : 'rgba(0, 184, 212, 0.12)',
-      bottomColor: isDark ? 'rgba(0, 229, 255, 0.01)' : 'rgba(0, 184, 212, 0.01)',
-      lineColor: isDark ? '#00e5ff' : '#00b8d4',
-      lineWidth: 2,
-      crosshairMarkerRadius: 4,
-      crosshairMarkerBorderColor: isDark ? '#00e5ff' : '#00b8d4',
-      crosshairMarkerBackgroundColor: isDark ? '#141414' : '#ffffff',
-    });
-
-    chartRef.current = chart;
-    seriesRef.current = series;
-
-    // 自适应容器大小
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width } = entry.contentRect;
-        chart.applyOptions({ width });
-      }
-    });
-    resizeObserver.observe(containerRef.current);
+    init();
 
     return () => {
-      resizeObserver.disconnect();
-      chart.remove();
+      aborted = true;
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+        seriesRef.current = null;
+      }
     };
-  }, [isDark]);
-
-  // 初始化图表
-  useEffect(() => {
-    let cleanup: (() => void) | undefined;
-    initChart().then((fn) => { cleanup = fn; });
-    return () => { cleanup?.(); };
-  }, [initChart]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 更新数据
   useEffect(() => {
