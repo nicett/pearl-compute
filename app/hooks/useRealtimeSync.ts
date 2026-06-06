@@ -139,26 +139,15 @@ export function useRealtimeSync(
         return false;
       }
 
-      const selectedPrice = processApiData(data);
-
-      let newHistory = priceHistoryRef.current;
-      if (selectedPrice && selectedPrice > 0) {
-        const newPoint: PriceHistoryPoint = {
-          ts: Math.floor(Date.now() / 1000),
-          price: selectedPrice,
-          volume: null,
-        };
-        const updated = [...newHistory, newPoint];
-        newHistory = updated.length > 4320 ? updated.slice(updated.length - 4320) : updated;
-        setPriceHistory(newHistory);
-      }
-
-      // 将成功获取的数据写入 localStorage 缓存
+      // 不再在前端累加单点数据
+      // 将成功获取的实时数据写入 localStorage 缓存（保留之前缓存的图表数据）
       try {
+        const cachedStr = localStorage.getItem('miner_calc_cache');
+        const cached = cachedStr ? JSON.parse(cachedStr) : {};
         localStorage.setItem('miner_calc_cache', JSON.stringify({
+          ...cached,
           ts: Date.now(),
           apiData: data,
-          priceHistory: newHistory
         }));
       } catch (e) {}
 
@@ -170,6 +159,34 @@ export function useRealtimeSync(
       return false;
     }
   }, [processApiData]);
+
+  const fetchChartData = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/chart?t=${Date.now()}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data && data.data && Array.isArray(data.data)) {
+        const mapped = data.data.map((p: any) => ({
+          ts: p.time,
+          price: p.close,
+          open: p.open,
+          high: p.high,
+          low: p.low,
+          close: p.close,
+          volume: p.volume
+        }));
+        setPriceHistory(mapped);
+        try {
+          const cachedStr = localStorage.getItem('miner_calc_cache');
+          const cached = cachedStr ? JSON.parse(cachedStr) : { ts: Date.now() };
+          cached.priceHistory = mapped;
+          localStorage.setItem('miner_calc_cache', JSON.stringify(cached));
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.error('Failed to fetch chart data', e);
+    }
+  }, []);
 
   // 倒计时和初始化逻辑
   const fetchingRef = useRef(false);
@@ -189,8 +206,14 @@ export function useRealtimeSync(
           // 如果缓存是 20 秒内的，则直接使用
           if (ageMs >= 0 && ageMs < 20000) {
             processApiData(cached.apiData);
-            if (cached.priceHistory) {
+            if (cached.priceHistory && cached.priceHistory.length > 0) {
               setPriceHistory(cached.priceHistory);
+              // 如果缓存很久了，可以考虑异步刷新下 chart
+              if (ageMs > 300000) { // 5分钟
+                 fetchChartData();
+              }
+            } else {
+              fetchChartData();
             }
             setCountdown(20 - Math.floor(ageMs / 1000));
             setSyncStatus('success');
@@ -204,6 +227,7 @@ export function useRealtimeSync(
       // 2. 如果没有有效缓存，则立即发起请求（而不是等 20 秒）
       if (!usedCache) {
         fetchingRef.current = true;
+        fetchChartData(); // 初始加载图表数据
         fetchRealtimeData()
           .finally(() => {
             fetchingRef.current = false;
@@ -229,7 +253,7 @@ export function useRealtimeSync(
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [fetchRealtimeData, processApiData]);
+  }, [fetchRealtimeData, processApiData, fetchChartData]);
 
   return {
     syncStatus,

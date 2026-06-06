@@ -3,8 +3,13 @@
 /** 价格历史数据点（环形缓冲区中的单条记录） */
 export interface PriceHistoryPoint {
   ts: number;       // Unix 秒
-  price: number;    // USDT
+  price: number;    // 当前/收盘价 (USDT)
   volume: number | null;
+  // K 线增强字段 (由后端 /api/chart 提供)
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
 }
 
 /** 网络统计扩展字段 */

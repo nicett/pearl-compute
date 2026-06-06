@@ -249,11 +249,17 @@ export default function MinerCalculator({ initialData }: Props) {
                 formattedSyncTime={sync.lastSyncTs ? formatSyncTime(sync.lastSyncTs, locale) : ''}
                 t={t}
               />
-              <PriceChart
-                priceHistory={sync.priceHistory}
-                resolvedTheme={resolvedTheme}
-                t={t}
-              />
+              {sync.selectedPriceSource === 'SafeTrade' ? (
+                <PriceChart
+                  priceHistory={sync.priceHistory}
+                  resolvedTheme={resolvedTheme}
+                  t={t}
+                />
+              ) : (
+                <div className="border border-edge overflow-hidden h-[220px] flex items-center justify-center text-muted text-sm tracking-wider uppercase">
+                  {t('priceTrendDesc')} · Not Available for {sync.selectedPriceSource}
+                </div>
+              )}
             </Panel>
           </div>
 

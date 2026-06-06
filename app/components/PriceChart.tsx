@@ -193,14 +193,13 @@ export default function PriceChart({ priceHistory, resolvedTheme, t }: PriceChar
           </span>
         </div>
       </div>
-      <div className="border border-edge overflow-hidden">
-        {priceHistory.length === 0 ? (
-          <div className="flex items-center justify-center h-[220px] text-muted text-sm tracking-wider uppercase">
+      <div className="border border-edge overflow-hidden relative h-[220px]">
+        {priceHistory.length === 0 && (
+          <div className="absolute inset-0 z-10 bg-background/80 flex items-center justify-center text-muted text-sm tracking-wider uppercase">
             {t('loading')}
           </div>
-        ) : (
-          <div ref={containerRef} />
         )}
+        <div ref={containerRef} className="w-full h-full" />
       </div>
       <p className="text-[10px] text-muted/30 text-center mt-2 tracking-wider uppercase">
         PRL/USDT · {t('priceTrendDesc')}
