@@ -51,12 +51,15 @@ export function useRealtimeSync(
       setSelectedPriceSource(name);
       onInputsUpdate((prev) => ({ ...prev, coinPrice: price }));
       setPriceSource(name);
+      try {
+        localStorage.setItem('miner_calc_price_source', name);
+      } catch (e) {}
     },
     [onInputsUpdate]
   );
 
   // 内部：处理后端返回的 JSON 数据
-  const processApiData = useCallback((data: any) => {
+  const processApiData = useCallback((data: any, overrideSource?: string) => {
     setIsStale(data.stale === true);
 
     const coinData = data.coins?.[0] || {};
@@ -77,14 +80,15 @@ export function useRealtimeSync(
     setAllPrices(priceList);
 
     // 根据用户选中的来源决定价格
+    const activeSource = overrideSource || selectedPriceSource;
     const selectedPrice =
-      priceList.find((p) => p.name === selectedPriceSource)?.price ||
+      priceList.find((p) => p.name === activeSource)?.price ||
       priceList.find((p) => p.name === 'Pearl OTC')?.price ||
       priceList[0]?.price ||
       coinData.price ||
       null;
     const sourceName =
-      priceList.find((p) => p.name === selectedPriceSource)?.name ||
+      priceList.find((p) => p.name === activeSource)?.name ||
       priceList.find((p) => p.name === 'Pearl OTC')?.name ||
       priceList[0]?.name ||
       data.priceSource ||
@@ -198,6 +202,17 @@ export function useRealtimeSync(
     if (!initializedRef.current) {
       initializedRef.current = true;
       let usedCache = false;
+      let savedSource = selectedPriceSource;
+
+      // 0. 读取记住的价格来源
+      try {
+        const saved = localStorage.getItem('miner_calc_price_source');
+        if (saved) {
+          savedSource = saved;
+          setSelectedPriceSource(saved);
+          setPriceSource(saved);
+        }
+      } catch (e) {}
 
       // 1. 尝试读取本地缓存
       try {
@@ -207,7 +222,7 @@ export function useRealtimeSync(
           const ageMs = Date.now() - cached.ts;
           // 如果缓存是 20 秒内的，则直接使用
           if (ageMs >= 0 && ageMs < 20000) {
-            processApiData(cached.apiData);
+            processApiData(cached.apiData, savedSource);
             if (cached.priceHistory && cached.priceHistory.length > 0) {
               setPriceHistory(cached.priceHistory);
               // 如果缓存很久了，可以考虑异步刷新下 chart
