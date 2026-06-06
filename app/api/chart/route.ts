@@ -9,8 +9,8 @@ async function fetchSafeTradeKlines(): Promise<any[] | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    // Peatio 标准 K 线接口，period=60分钟 (1H)，limit=100
-    const res = await fetch('https://safe.trade/api/v2/trade/public/markets/prlusdt/k-line?period=60&limit=100', {
+    // Peatio 标准 K 线接口，period=15分钟，limit=100 (覆盖 25 小时)
+    const res = await fetch('https://safe.trade/api/v2/trade/public/markets/prlusdt/k-line?period=15&limit=100', {
       signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -54,7 +54,7 @@ export async function GET() {
 
     return NextResponse.json({
       source: 'SafeTrade',
-      period: 60,
+      period: 15,
       data: klines
     }, { headers: clientHeaders });
 
