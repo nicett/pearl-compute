@@ -32,7 +32,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col overflow-x-hidden w-full">
         <ThemeProvider>
           <I18nProvider>
             {children}

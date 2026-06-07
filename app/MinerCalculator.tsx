@@ -132,7 +132,7 @@ export default function MinerCalculator({ initialData }: Props) {
   const isBleeding = results.dailyNetRMB <= 0;
 
   return (
-    <div className="min-h-screen bg-surface-dark">
+    <div className="min-h-screen bg-surface-dark overflow-x-hidden w-full">
       {/* 顶部控制栏 */}
       <TopBar
         locale={locale}
