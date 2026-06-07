@@ -23,8 +23,8 @@ export default function NetworkInputs({
   return (
     <div className="space-y-4">
       <div className="input-group relative">
-        <div className="flex justify-between items-end mb-2">
-          <label className="mb-0 text-indigo-400">
+        <div className="flex justify-between items-end mb-2 flex-wrap gap-1">
+          <label className="mb-0 text-indigo-400 flex-shrink-0">
             {t('hashrateYield')}
           </label>
           <span className="text-[10px] text-indigo-400/60 font-medium border border-indigo-500/20 px-1.5 py-0.5 tracking-wider uppercase">

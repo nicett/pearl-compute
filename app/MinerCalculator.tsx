@@ -291,17 +291,17 @@ function TopBar({ locale, setLocale, theme, setTheme, syncStatus, isStale, count
 
   return (
     <div className="bg-surface border-b border-edge">
-      <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-accent font-bold text-sm tracking-[0.3em] uppercase">PRL</span>
-          <span className="text-muted/30 text-xs">MINER CALCULATOR</span>
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-y-2">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <span className="text-accent font-bold text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase">PRL</span>
+          <span className="text-muted/30 text-xs hidden sm:inline">MINER CALCULATOR</span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs text-muted">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 text-xs text-muted flex-shrink-0">
             <span className={`w-2 h-2 rounded-full ${statusColor} animate-pulse-slow`} />
             <span suppressHydrationWarning>{syncStatus === 'error' ? 'ERR' : `${countdown}s`}</span>
           </div>
-          <span className="text-edge">│</span>
+          <span className="text-edge hidden sm:inline">│</span>
           <button
             onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}
             className="text-xs text-muted hover:text-gray-200 px-2 py-1 border border-edge hover:border-edge-light transition-colors tracking-wider uppercase"
