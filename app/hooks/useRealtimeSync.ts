@@ -225,10 +225,6 @@ export function useRealtimeSync(
             processApiData(cached.apiData, savedSource);
             if (cached.priceHistory && cached.priceHistory.length > 0) {
               setPriceHistory(cached.priceHistory);
-              // 如果缓存很久了，可以考虑异步刷新下 chart
-              if (ageMs > 300000) { // 5分钟
-                 fetchChartData();
-              }
             } else {
               fetchChartData();
             }
@@ -244,8 +240,7 @@ export function useRealtimeSync(
       // 2. 如果没有有效缓存，则立即发起请求（而不是等 20 秒）
       if (!usedCache) {
         fetchingRef.current = true;
-        fetchChartData(); // 初始加载图表数据
-        fetchRealtimeData()
+        Promise.all([fetchRealtimeData(), fetchChartData()])
           .finally(() => {
             fetchingRef.current = false;
             setCountdown(20);
@@ -258,7 +253,7 @@ export function useRealtimeSync(
       setCountdown((prev) => {
         if (prev <= 1 && !fetchingRef.current) {
           fetchingRef.current = true;
-          fetchRealtimeData()
+          Promise.all([fetchRealtimeData(), fetchChartData()])
             .finally(() => {
               fetchingRef.current = false;
               setCountdown(20); // 请求完成后重置倒计时
