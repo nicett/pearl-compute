@@ -100,9 +100,6 @@ function getCacheKey(request: Request): string {
   return url.toString();
 }
 
-// ── Memory Cache Fallback (for Node.js / Docker environment) ──
-const memoryCache = new Map<string, { data: any, expiresAt: number }>();
-
 export async function GET(request: Request) {
   const clientHeaders = {
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -113,7 +110,6 @@ export async function GET(request: Request) {
   try {
     const edgeCache = getEdgeCache();
     const cacheKey = getCacheKey(request);
-    const now = Date.now();
 
     if (edgeCache) {
       try {
@@ -124,12 +120,6 @@ export async function GET(request: Request) {
         }
       } catch (e) {
         console.warn('[cache:read]', e);
-      }
-    } else {
-      // Node.js fallback
-      const cached = memoryCache.get(cacheKey);
-      if (cached && cached.expiresAt > now) {
-        return NextResponse.json({ ...cached.data, cached: true, cacheType: 'memory' }, { headers: clientHeaders });
       }
     }
 
@@ -157,9 +147,6 @@ export async function GET(request: Request) {
       } catch (e) {
         console.warn('[cache:write]', e);
       }
-    } else {
-      // Node.js fallback
-      memoryCache.set(cacheKey, { data, expiresAt: now + CACHE_TTL_SEC * 1000 });
     }
 
     return NextResponse.json(data, { headers: clientHeaders });
