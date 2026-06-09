@@ -1,0 +1,33 @@
+name: Deploy to 1Panel Server
+
+on:
+  push:
+    branches:
+      - master # 或者 main，看你默认分支是哪个
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          # 也可以换成私钥 key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # 这里的路径改成你在服务器上存放代码的实际路径
+            cd /opt/pearl-compute
+            
+            # 拉取最新代码
+            git pull origin master
+            
+            # 使用 1panel 的 docker 环境重新构建并启动
+            docker compose down
+            docker compose build
+            docker compose up -d
+            
+            # 清理无用的镜像释放服务器空间
+            docker image prune -f

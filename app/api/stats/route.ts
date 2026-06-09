@@ -259,6 +259,9 @@ function getCacheKey(request: Request): string {
   return url.toString();
 }
 
+// ── Memory Cache Fallback (for Node.js / Docker environment) ──
+const memoryCache = new Map<string, { data: any, expiresAt: number }>();
+
 // ── GET Handler ──
 
 export async function GET(request: Request) {
@@ -271,8 +274,9 @@ export async function GET(request: Request) {
   try {
     const edgeCache = getEdgeCache();
     const cacheKey = getCacheKey(request);
+    const now = Date.now();
 
-    // ── 1. 优先读 Edge Cache（前端请求不触发任何外部 API 调用） ──
+    // ── 1. 优先读 Edge Cache 或 Memory Cache ──
     if (edgeCache) {
       try {
         const cached = await edgeCache.match(cacheKey);
@@ -282,6 +286,12 @@ export async function GET(request: Request) {
         }
       } catch (e) {
         console.warn('[cache:read]', e);
+      }
+    } else {
+      // Node.js fallback
+      const cached = memoryCache.get(cacheKey);
+      if (cached && cached.expiresAt > now) {
+        return NextResponse.json({ ...cached.data, cached: true, cacheType: 'memory' }, { headers: clientHeaders });
       }
     }
 
@@ -295,7 +305,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // ── 3. 写入 Edge Cache（后续请求直接命中，不再调用外部 API） ──
+    // ── 3. 写入 Edge Cache 或 Memory Cache ──
     if (edgeCache) {
       try {
         const cacheResp = new Response(JSON.stringify(data), {
@@ -308,6 +318,9 @@ export async function GET(request: Request) {
       } catch (e) {
         console.warn('[cache:write]', e);
       }
+    } else {
+      // Node.js fallback
+      memoryCache.set(cacheKey, { data, expiresAt: now + CACHE_TTL_SEC * 1000 });
     }
 
     return NextResponse.json(data, { headers: clientHeaders });
