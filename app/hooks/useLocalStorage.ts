@@ -1,51 +1,72 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
- * 通用 localStorage Hook，支持 SSR 安全
- * @param key localStorage 键名
- * @param fields 要读写的字段列表
- * @returns [values, saveOne, saveAll]
+ * SSR 安全的持久化输入 Hook
+ *
+ * 使用模式：
+ *   const [inputs, setInputs, hydrated] = usePersistedInputs(
+ *     'miner_calc',
+ *     defaults,
+ *     ['gpuCount', 'cardPrice', ...]  // 要持久化的字段子集
+ *   );
+ *
+ * - 服务端渲染时返回 defaults，避免 hydration mismatch
+ * - 客户端 mount 后异步从 localStorage 读取并合并
+ * - 后续 inputs 变化自动同步到 localStorage（仅 `persistFields` 指定的字段）
+ * - 在首次水合完成前，不会触发保存（避免默认值覆盖已存的用户配置）
  */
-export function useLocalStorage<T extends Record<string, number>>(
+export function usePersistedInputs<T extends object>(
   keyPrefix: string,
-  fields: (keyof T)[],
-  defaults: T
-): [T, (field: keyof T, value: number) => void] {
-  const [values, setValues] = useState<T>(defaults);
+  defaults: T,
+  persistFields: (keyof T)[]
+): [T, React.Dispatch<React.SetStateAction<T>>, boolean] {
+  const [inputs, setInputs] = useState<T>(defaults);
+  const [hydrated, setHydrated] = useState(false);
+  const fieldsRef = useRef(persistFields);
 
-  // 从 localStorage 加载
+  // 客户端 mount 时读取已保存的值
   useEffect(() => {
     try {
-      const saved: Partial<T> = {};
-      let hasSaved = false;
-      for (const field of fields) {
-        const savedVal = localStorage.getItem(`${keyPrefix}_${String(field)}`);
-        if (savedVal !== null) {
-          saved[field] = parseFloat(savedVal) as T[typeof field];
-          hasSaved = true;
+      const loaded: Partial<T> = {};
+      for (const field of fieldsRef.current) {
+        const raw = localStorage.getItem(`${keyPrefix}_${String(field)}`);
+        if (raw !== null) {
+          const num = parseFloat(raw);
+          if (!isNaN(num)) {
+            (loaded as Record<string, number>)[String(field)] = num;
+          }
         }
       }
-      if (hasSaved) {
-        setValues((prev) => ({ ...prev, ...saved }));
+      if (Object.keys(loaded).length > 0) {
+        setInputs((prev) => ({ ...prev, ...loaded }));
       }
     } catch (e) {
-      // Safari private mode etc.
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 保存单个字段
-  const saveOne = useCallback(
-    (field: keyof T, value: number) => {
-      try {
-        localStorage.setItem(`${keyPrefix}_${String(field)}`, value.toString());
-      } catch (e) {
-        // Ignore quota exceeded
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[usePersistedInputs] read failed:', e);
       }
-    },
-    [keyPrefix]
-  );
+    } finally {
+      setHydrated(true);
+    }
+  }, [keyPrefix]);
 
-  return [values, saveOne];
+  // inputs 变化时回写（水合完成后才生效）
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      for (const field of fieldsRef.current) {
+        const value = inputs[field];
+        if (value != null) {
+          localStorage.setItem(`${keyPrefix}_${String(field)}`, String(value));
+        }
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[usePersistedInputs] write failed:', e);
+      }
+    }
+  }, [inputs, hydrated, keyPrefix]);
+
+  return [inputs, setInputs, hydrated];
 }
