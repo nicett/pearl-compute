@@ -9,7 +9,6 @@ interface UsePoolDataReturn {
   error: boolean;
   selectedPool: string | null;
   selectPool: (slug: string | null) => void;
-  getPoolBySlug: (slug: string) => PoolData | undefined;
 }
 
 /**
@@ -26,7 +25,8 @@ export function usePoolData(
     // 从 localStorage 恢复选择
     try {
       return localStorage.getItem('miner_calc_selectedPool') || null;
-    } catch {
+    } catch (e) {
+      if (process.env.NODE_ENV !== 'production') console.warn('[usePoolData] read selectedPool failed:', e);
       return null;
     }
   });
@@ -75,14 +75,12 @@ export function usePoolData(
       } else {
         localStorage.removeItem('miner_calc_selectedPool');
       }
-    } catch {}
+    } catch (e) {
+      if (process.env.NODE_ENV !== 'production') console.warn('[usePoolData] write selectedPool failed:', e);
+    }
   }, []);
 
   // 根据 slug 获取矿池
-  const getPoolBySlug = useCallback((slug: string) => {
-    return pools.find((p) => p.slug === slug);
-  }, [pools]);
-
   // 当矿池列表加载完成或选择变化时，通知父组件
   useEffect(() => {
     if (loading) return;
@@ -101,6 +99,5 @@ export function usePoolData(
     error,
     selectedPool,
     selectPool,
-    getPoolBySlug,
   };
 }

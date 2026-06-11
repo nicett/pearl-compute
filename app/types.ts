@@ -22,11 +22,14 @@ export interface NetworkStats {
   hashrateYield: number;       // 每 TH 每小时产币数
 }
 
+/** 价格来源名称（联合字面量；扩展时同步更新各 fetch 函数和 i18n） */
+export type PriceSourceName = 'Pearl OTC' | 'SafeTrade' | 'OKX Web3' | 'unknown';
+
 export interface InitialData {
   hashrateYield: number;
   coinPrice: number;
   exchangeRate: number;
-  priceSource: string;
+  priceSource: PriceSourceName;
   // Phase 1 扩展
   networkStats: NetworkStats;
   priceHistory: PriceHistoryPoint[];

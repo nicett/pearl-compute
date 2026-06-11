@@ -30,7 +30,6 @@
   "dailyElecCost": "Daily Electricity Cost",
   "dailyGross": "Daily Gross Output",
   "dailyCoinOutput": "Daily Coin Output",
-  "tipDailyCoinOutput": "Daily PRL output = Total Hashrate × Yield × 24h × (1 − Fee). Before electricity cost.",
   "dailyNet": "Daily Net Profit",
   "costRatio": "Electricity Cost Ratio",
   "efficiencyTitle": "Hardware Efficiency Analysis",

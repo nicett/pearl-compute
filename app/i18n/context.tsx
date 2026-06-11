@@ -27,7 +27,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         setLocale(savedLocale);
       }
     } catch (e) {
-      // Ignore
+      if (process.env.NODE_ENV !== 'production') console.warn('[i18n] read locale failed:', e);
     }
   }, []);
 
@@ -37,7 +37,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem('pearl_locale', newLocale);
     } catch (e) {
-      // Ignore
+      if (process.env.NODE_ENV !== 'production') console.warn('[i18n] write locale failed:', e);
     }
   };
 

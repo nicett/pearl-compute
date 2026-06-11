@@ -7,6 +7,7 @@ import { useMiningCalculator } from './hooks/useMiningCalculator';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
 import { useChartManager } from './hooks/useChartManager';
 import { usePoolData } from './hooks/usePoolData';
+import { usePersistedInputs } from './hooks/useLocalStorage';
 import { formatNumber, formatSyncTime } from './utils';
 import { calcChangePercent } from './math';
 import { InitialData, MiningInputs, Currency, PriceHistoryPoint, PoolData } from './types';
@@ -32,36 +33,25 @@ export default function MinerCalculator({ initialData }: Props) {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const currency: Currency = locale === 'zh' ? 'CNY' : 'USD';
 
-  // 从 localStorage 读取用户上次保存的参数
-  const savedValues = (() => {
-    try {
-      return {
-        gpuCount: parseFloat(localStorage.getItem('miner_calc_gpuCount') || ''),
-        cardPrice: parseFloat(localStorage.getItem('miner_calc_cardPrice') || ''),
-        residualValue: parseFloat(localStorage.getItem('miner_calc_residualValue') || ''),
-        powerCons: parseFloat(localStorage.getItem('miner_calc_powerCons') || ''),
-        gpuHashrate: parseFloat(localStorage.getItem('miner_calc_gpuHashrate') || ''),
-        poolFee: parseFloat(localStorage.getItem('miner_calc_poolFee') || ''),
-        electricityPrice: parseFloat(localStorage.getItem('miner_calc_electricityPrice') || ''),
-      };
-    } catch {
-      return {} as Record<string, number>;
-    }
-  })();
-
-  const [inputs, setInputs] = useState<MiningInputs>({
-    gpuCount: isNaN(savedValues.gpuCount) ? 1 : savedValues.gpuCount,
-    cardPrice: isNaN(savedValues.cardPrice) ? 2800 : savedValues.cardPrice,
-    residualValue: isNaN(savedValues.residualValue) ? 2000 : savedValues.residualValue,
-    powerCons: isNaN(savedValues.powerCons) ? 150 : savedValues.powerCons,
-    gpuHashrate: isNaN(savedValues.gpuHashrate) ? 70 : savedValues.gpuHashrate,
+  // 默认参数（首屏渲染、SSR 安全；客户端 mount 后由 usePersistedInputs 合并 localStorage 的值）
+  const PERSISTED_FIELDS: (keyof MiningInputs)[] = [
+    'gpuCount', 'cardPrice', 'residualValue', 'powerCons',
+    'gpuHashrate', 'poolFee', 'electricityPrice',
+  ];
+  const defaults: MiningInputs = {
+    gpuCount: 1,
+    cardPrice: 2800,
+    residualValue: 2000,
+    powerCons: 150,
+    gpuHashrate: 70,
     hashrateYield: initialData.hashrateYield,
     coinPrice: initialData.coinPrice,
-    poolFee: isNaN(savedValues.poolFee) ? 3.0 : savedValues.poolFee,
-    electricityPrice: isNaN(savedValues.electricityPrice) ? 0.70 : savedValues.electricityPrice,
+    poolFee: 3.0,
+    electricityPrice: 0.70,
     exchangeRate: initialData.exchangeRate,
     selectedPool: null, // 由 usePoolData hook 管理
-  });
+  };
+  const [inputs, setInputs] = usePersistedInputs<MiningInputs>('miner_calc', defaults, PERSISTED_FIELDS);
 
   // 保存选择矿池前的用户自定义 poolFee
   const prePoolFeeRef = useRef<number | null>(null);
@@ -103,19 +93,7 @@ export default function MinerCalculator({ initialData }: Props) {
   const handleInputChange = useCallback((field: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     setInputs((prev) => ({ ...prev, [field]: numValue }));
-  }, []);
-
-  useEffect(() => {
-    try {
-      const fields: (keyof MiningInputs)[] = ['gpuCount', 'cardPrice', 'residualValue', 'powerCons', 'gpuHashrate', 'poolFee', 'electricityPrice'];
-      fields.forEach((key) => {
-        const value = inputs[key];
-        if (value != null) {
-          localStorage.setItem(`miner_calc_${key}`, value.toString());
-        }
-      });
-    } catch (e) {}
-  }, [inputs]);
+  }, [setInputs]);
 
   const results = useMiningCalculator(inputs, currency);
   const sync = useRealtimeSync(initialData.priceSource, setInputs, initialData.networkStats, initialData.priceHistory, inputs.selectedPool);
@@ -127,7 +105,8 @@ export default function MinerCalculator({ initialData }: Props) {
       dailyNet: results.dailyNetRMB,
       totalRiskExposure: results.totalInvestment - results.totalResidual,
     });
-  }, [results, charts]);
+    // 只依赖真正影响图表的标量字段，避免 results / charts 对象引用每次变化都触发 Chart.update()
+  }, [results.dailyElecCostRMB, results.dailyNetRMB, results.totalInvestment, results.totalResidual, charts.updateCharts]);
 
   const isBleeding = results.dailyNetRMB <= 0;
 
