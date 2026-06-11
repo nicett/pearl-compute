@@ -4,6 +4,7 @@
  * 设计要点：
  * - 单例懒加载客户端：避免 dev server 热重载产生多连接
  * - Redis 不可达时降级到直接执行 fetcher，永不抛错给上层（可用性 > 命中率）
+ * - 不可用状态下后续请求跳过 Redis，避免日志刷屏；连接恢复后自动重新启用
  * - TTL 用 `SET key value EX ttl` 一次性写入，避免两次往返
  */
 import Redis from 'ioredis';
@@ -11,10 +12,17 @@ import Redis from 'ioredis';
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
 let client: Redis | null = null;
-let connectionFailed = false;
+let unavailable = false;
+
+function noteUnavailable(err: unknown): void {
+  if (unavailable) return; // 已经报告过，重复 error 事件静默
+  unavailable = true;
+  const msg = err instanceof Error ? err.message : String(err);
+  console.warn(`[cache] Redis unavailable, falling back to no-cache mode: ${msg}`);
+}
 
 function getClient(): Redis | null {
-  if (connectionFailed) return null;
+  if (unavailable) return null;
   if (client) return client;
 
   try {
@@ -28,25 +36,26 @@ function getClient(): Redis | null {
       lazyConnect: false,
     });
 
-    client.on('error', (err) => {
-      // 只在第一次报错时打印，避免日志刷屏
-      if (!connectionFailed) {
-        console.warn('[cache] Redis error, falling back to no-cache mode:', err.message);
-        connectionFailed = true;
+    client.on('error', noteUnavailable);
+
+    // Redis 后台重连成功后，恢复缓存模式
+    client.on('ready', () => {
+      if (unavailable) {
+        unavailable = false;
+        console.info('[cache] Redis reconnected, cache re-enabled');
       }
     });
 
     return client;
   } catch (e) {
-    console.warn('[cache] Redis init failed:', e);
-    connectionFailed = true;
+    noteUnavailable(e);
     return null;
   }
 }
 
 /**
  * 缓存读取-未命中-写入的通用模板。
- * 返回 `{ data, cached }`，`cached: true` 表示来自 Redis（前端可用于打标识）。
+ * 返回 `{ data, cached }`，`cached: true` 表示来自 Redis。
  * Redis 任何异常都不影响主流程：直接执行 fetcher 返回 `cached: false`。
  */
 export async function withRedisCache<T>(
@@ -63,9 +72,8 @@ export async function withRedisCache<T>(
       if (cached) {
         return { data: JSON.parse(cached) as T, cached: true };
       }
-    } catch (e) {
-      // 单次读失败不影响后续 fetch，也不污染连接状态
-      console.warn(`[cache:read] ${key}`, e instanceof Error ? e.message : e);
+    } catch {
+      // 单次读失败静默吞掉；连接级失败会经 'error' 事件汇总到 noteUnavailable
     }
   }
 
@@ -76,8 +84,8 @@ export async function withRedisCache<T>(
   if (redis) {
     try {
       await redis.set(key, JSON.stringify(data), 'EX', ttlSec);
-    } catch (e) {
-      console.warn(`[cache:write] ${key}`, e instanceof Error ? e.message : e);
+    } catch {
+      // 同上
     }
   }
 
