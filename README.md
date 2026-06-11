@@ -1,10 +1,11 @@
 # 珍珠链算力计算器 (Pearl Compute)
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
-[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-orange)](https://pages.cloudflare.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 
-珍珠链（PRL）矿工收益与回本计算器。支持实时币价、全网算力、矿池切换、关机价、K 线图等功能。基于 Next.js 14 App Router + Cloudflare Pages Edge Runtime 构建。
+珍珠链（PRL）矿工收益与回本计算器。支持实时币价、全网算力、矿池切换、关机价、K 线图等功能。基于 Next.js 14 App Router + Node.js 自托管部署。
+
+> 这是 `self-hosted` 分支 — 面向自部署服务器（如阿里云 ECS）。Cloudflare Pages 版本在 `master` 分支。
 
 ## ✨ 功能
 
@@ -31,24 +32,40 @@ npm test           # 运行 Jest 单元测试
 npm run test:watch # 监听模式
 ```
 
-### 构建与部署
+### 构建与运行
 
 ```bash
-npm run build      # 标准 Next.js 构建（用于本地验证）
-npm run build:cf   # 构建 Cloudflare Pages 产物（.vercel/output/static）
-npm run deploy:cf  # 部署到 Cloudflare Pages
+npm run build
+npm start          # 默认 http://localhost:3000
 ```
 
-> ⚠️ **重要**：推送到 `master` 分支会通过 Cloudflare Pages 的自动构建钩子触发线上重新部署，提交前请确保改动已经过本地验证。
+## 🔧 环境变量
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `REDIS_URL` | `redis://127.0.0.1:6379` | 服务端缓存使用的 Redis 连接串。Redis 不可达时自动降级到无缓存模式（每次请求直打上游） |
+| `PORT` | `3000` | `next start` 监听端口 |
+
+最小化运行（本机有 Redis）：
+
+```bash
+npm run build && npm start
+```
+
+容器化 Redis 一行起：
+
+```bash
+docker run -d --name pearl-redis -p 6379:6379 redis:7-alpine
+```
 
 ## 🗂️ 项目结构
 
 ```
 app/
-├── api/                  # Edge Runtime API 路由
-│   ├── stats/route.ts    # 聚合：币价 + 全网算力（缓存 20s）
-│   ├── pools/route.ts    # 矿池列表（缓存 60s）
-│   └── chart/route.ts    # K 线历史（缓存 60s）
+├── api/                  # API 路由（Node.js runtime）
+│   ├── stats/route.ts    # 聚合：币价 + 全网算力（Redis 缓存 20s）
+│   ├── pools/route.ts    # 矿池列表（Redis 缓存 60s）
+│   └── chart/route.ts    # K 线历史（Redis 缓存 20s）
 ├── components/           # UI 组件（HardwareInputs / PriceChart 等）
 ├── hooks/                # 自定义 Hook
 │   ├── useMiningCalculator.ts  # 核心金融计算入口
@@ -56,6 +73,9 @@ app/
 │   ├── usePoolData.ts          # 矿池数据
 │   ├── useChartManager.ts      # Chart.js 管理
 │   └── useLocalStorage.ts      # SSR 安全的 localStorage
+├── lib/
+│   ├── data-sources.ts   # 上游数据抓取（PRL 价格、网络算力、K 线）
+│   └── cache.ts          # Redis 缓存工具（withRedisCache）
 ├── i18n/                 # 中英双语 (zh.json / en.json)
 ├── theme/                # 明暗主题
 ├── math.ts               # 金融计算原子函数（BigNumber）
@@ -76,18 +96,7 @@ __tests__/                # Jest 单元测试
 | 网络算力 / 出块 | PRLScan API | |
 | K 线历史 | SafeTrade `/api/v2/trade/public/markets/prlusdt/k-line` | 15min × 100 |
 
-API 路由统一在 Edge Runtime 运行，并使用 `caches.default`（Cloudflare Edge Cache）做服务端缓存，TTL 见各路由顶部常量。
-
-## ☁️ Cloudflare Pages 部署细节
-
-- 构建命令：`npm run build:cf`
-- 输出目录：`.vercel/output/static`
-- 兼容性标志：`nodejs_compat`（见 `wrangler.toml`）
-- 所有 API 路由均使用 `export const runtime = 'edge'`
-- **限制**：
-  - 不能使用 `cache: 'no-store'`（Cloudflare Workers Runtime 不支持）
-  - 不能使用 Node.js 专属 API
-  - 默认的 Next Image Optimization 不可用
+API 路由统一通过 `app/lib/cache.ts` 的 `withRedisCache` 做服务端缓存，TTL 见各路由顶部常量。
 
 ## 🛠️ 技术栈
 
@@ -96,8 +105,9 @@ API 路由统一在 Edge Runtime 运行，并使用 `caches.default`（Cloudflar
 - **样式**：Tailwind CSS 3
 - **图表**：Chart.js 4 + lightweight-charts 5
 - **数值**：mathjs (BigNumber)
+- **缓存**：Redis (ioredis)
 - **测试**：Jest 30 + React Testing Library
-- **部署**：Cloudflare Pages + Edge Runtime
+- **部署**：Node.js (self-hosted)
 
 ## 📄 License
 

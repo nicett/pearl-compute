@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
+import { withRedisCache } from '../../lib/cache';
 
-// Edge runtime: Cloudflare Pages 使用
-export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
-// Edge Cache TTL（秒）
 const CACHE_TTL_SEC = 60;
+const CACHE_KEY = 'pearl:pools';
 
 interface PoolItem {
   slug: string;
@@ -30,7 +30,6 @@ interface FetchPoolsResult {
 
 /**
  * 从 PRLScan API 获取矿池列表
- * - 返回 { pools, warning? }：warning 用于上游降级时给前端提示
  * - 失败时 throw，由 caller 决定 502 还是 fallback
  */
 async function fetchPools(): Promise<FetchPoolsResult> {
@@ -50,7 +49,6 @@ async function fetchPools(): Promise<FetchPoolsResult> {
     }
 
     // 单次 pass：同时过滤、累计、收集，避免在 ~600 个 pool 上做多次遍历
-    // (Cloudflare Workers Free Plan CPU 限制 10ms，必须省着用)
     let totalBlocks = 0;
     const active: PoolItem[] = [];
     for (const p of data.items as PoolItem[]) {
@@ -84,84 +82,21 @@ async function fetchPools(): Promise<FetchPoolsResult> {
   }
 }
 
-// ── Edge Cache 工具函数 ──
+const clientHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+};
 
-function getEdgeCache(): Cache | null {
+export async function GET() {
   try {
-    return (caches as unknown as { default: Cache }).default;
-  } catch {
-    return null;
-  }
-}
-
-function getCacheKey(request: Request): string {
-  const url = new URL(request.url);
-  url.search = '';
-  return url.toString();
-}
-
-// ── GET Handler ──
-
-export async function GET(request: Request) {
-  const clientHeaders = {
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    'CDN-Cache-Control': 'no-store',
-    'Cloudflare-CDN-Cache-Control': 'no-store',
-  };
-
-  try {
-    const edgeCache = getEdgeCache();
-    const cacheKey = getCacheKey(request);
-
-    // ── 1. 优先读 Edge Cache ──
-    if (edgeCache) {
-      try {
-        const cached = await edgeCache.match(cacheKey);
-        if (cached) {
-          const body = await cached.json();
-          return NextResponse.json({ ...body, cached: true }, { headers: clientHeaders });
-        }
-      } catch {
-        // 缓存读取失败不影响主流程
-      }
-    }
-
-    // ── 2. 缓存未命中 — 从 PRLScan API 获取 ──
-    let result: FetchPoolsResult;
-    try {
-      result = await fetchPools();
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      console.error('[pools] fetch failed:', message);
-      // 降级：返回空 pools 而非 502，前端可继续以全网模式工作
-      // 同时附带 warning 字段给前端展示提示（可选）
-      return NextResponse.json(
-        { pools: [], warning: `Failed to fetch pools: ${message}`, stale: true },
-        { headers: clientHeaders }
-      );
-    }
-
-    // ── 3. 写入 Edge Cache（仅成功时） ──
-    if (edgeCache && result.pools.length > 0) {
-      try {
-        const cacheResp = new Response(JSON.stringify(result), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': `s-maxage=${CACHE_TTL_SEC}`,
-          },
-        });
-        await edgeCache.put(cacheKey, cacheResp);
-      } catch {
-        // 缓存写入失败不影响响应返回
-      }
-    }
-
-    return NextResponse.json(result, { headers: clientHeaders });
-  } catch (error) {
-    console.error('[pools] route error:', error);
+    const { data, cached } = await withRedisCache(CACHE_KEY, CACHE_TTL_SEC, fetchPools);
+    return NextResponse.json(cached ? { ...data, cached: true } : data, { headers: clientHeaders });
+  } catch (e) {
+    // 上游 PRLScan 不可用：降级返回空列表 + warning，前端切回全网模式
+    const message = e instanceof Error ? e.message : String(e);
+    console.error('[pools] fetch failed:', message);
     return NextResponse.json(
-      { pools: [], error: 'Internal server error', stale: true },
-      { headers: clientHeaders }
+      { pools: [], warning: `Failed to fetch pools: ${message}`, stale: true },
+      { headers: clientHeaders },
     );
   }
 }

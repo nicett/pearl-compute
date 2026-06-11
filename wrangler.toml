@@ -1,6 +1,0 @@
-# Cloudflare Pages 配置
-# @cloudflare/next-on-pages 需要 nodejs_compat 兼容标志才能正常运行 Edge Runtime API Routes
-name = "pearl-compute"
-compatibility_date = "2024-09-23"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output/static"

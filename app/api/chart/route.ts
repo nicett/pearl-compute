@@ -1,79 +1,36 @@
 import { NextResponse } from 'next/server';
 import { fetchSafeTradeKlines } from '../../lib/data-sources';
+import { withRedisCache } from '../../lib/cache';
 
-export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
-const CACHE_TTL_SEC = 20; // 20秒缓存
+const CACHE_TTL_SEC = 20;
+const CACHE_KEY = 'pearl:chart';
 
-// ── Edge Cache 工具函数 ──
+const clientHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+};
 
-function getEdgeCache(): Cache | null {
+export async function GET() {
   try {
-    return (caches as unknown as { default: Cache }).default;
-  } catch {
-    return null;
-  }
-}
-
-function getCacheKey(request: Request): string {
-  const url = new URL(request.url);
-  url.search = ''; // 去掉 ?t= 时间戳，确保命中同一条缓存
-  return url.toString();
-}
-
-export async function GET(request: Request) {
-  const clientHeaders = {
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    'CDN-Cache-Control': 'no-store',
-    'Cloudflare-CDN-Cache-Control': 'no-store',
-  };
-
-  try {
-    const edgeCache = getEdgeCache();
-    const cacheKey = getCacheKey(request);
-
-    if (edgeCache) {
-      try {
-        const cached = await edgeCache.match(cacheKey);
-        if (cached) {
-          const body = await cached.json();
-          return NextResponse.json({ ...body, cached: true }, { headers: clientHeaders });
-        }
-      } catch (e) {
-        console.warn('[cache:read]', e);
+    const { data, cached } = await withRedisCache(CACHE_KEY, CACHE_TTL_SEC, async () => {
+      const klines = await fetchSafeTradeKlines();
+      if (!klines || klines.length === 0) {
+        throw new Error('SafeTrade returned no klines');
       }
-    }
+      return {
+        source: 'SafeTrade',
+        period: 15,
+        data: klines,
+      };
+    });
 
-    const klines = await fetchSafeTradeKlines();
-
-    if (!klines || klines.length === 0) {
-      return NextResponse.json({ error: 'Failed to fetch chart data from SafeTrade' }, { status: 502, headers: clientHeaders });
-    }
-
-    const data = {
-      source: 'SafeTrade',
-      period: 15,
-      data: klines,
-    };
-
-    if (edgeCache) {
-      try {
-        const cacheResp = new Response(JSON.stringify(data), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': `s-maxage=${CACHE_TTL_SEC}`,
-          },
-        });
-        await edgeCache.put(cacheKey, cacheResp);
-      } catch (e) {
-        console.warn('[cache:write]', e);
-      }
-    }
-
-    return NextResponse.json(data, { headers: clientHeaders });
-
+    return NextResponse.json(cached ? { ...data, cached: true } : data, { headers: clientHeaders });
   } catch (error) {
-    console.error('API route error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[chart] route error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch chart data from SafeTrade' },
+      { status: 502, headers: clientHeaders },
+    );
   }
 }

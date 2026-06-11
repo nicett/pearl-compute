@@ -5,8 +5,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "next build && npx @cloudflare/next-on-pages",
-    "deploy:cf": "npx wrangler pages deploy .vercel/output/static --project-name pearl-compute",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -14,6 +12,7 @@
   },
   "dependencies": {
     "chart.js": "^4.4.7",
+    "ioredis": "^5.4.1",
     "lightweight-charts": "^5.2.0",
     "mathjs": "^15.2.0",
     "next": "^14.2.0",
@@ -21,7 +20,6 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.7",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/jest": "^30.0.0",
