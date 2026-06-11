@@ -75,10 +75,9 @@ export function useMiningCalculator(
     const costEff = calcEfficiency(gpuHashrate, cardPrice);
     const powerEff = calcEfficiency(gpuHashrate, powerCons);
 
-    // 关机币价
-    const effectiveYield = calcDailyCoinOutput(totalHashrate, hashrateYield, poolFee);
+    // 关机币价（复用上面已计算的 dailyCoinOutput，避免重复 BigNumber 链式运算）
     const dailyElecCostUSD = isUSD ? dailyElecCost : dailyElecCost / safeRate;
-    const shutdownPrice = calcShutdownPrice(dailyElecCostUSD, effectiveYield);
+    const shutdownPrice = calcShutdownPrice(dailyElecCostUSD, dailyCoinOutput);
 
     // 投资回报率
     const dailyROI = calcDailyROI(dailyNet, totalInvestment);

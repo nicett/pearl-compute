@@ -30,7 +30,6 @@
   "dailyElecCost": "每日电费",
   "dailyGross": "每日毛产出",
   "dailyCoinOutput": "日产币",
-  "tipDailyCoinOutput": "每日产出的 PRL 数量 = 总算力 × 时产 × 24h × (1 − 费率)。未扣除电费。",
   "dailyNet": "每日净利润",
   "costRatio": "电费占比",
   "efficiencyTitle": "硬件效能分析",
