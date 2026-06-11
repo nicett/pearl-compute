@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MiningInputs, PriceSource, SyncStatus, NetworkStats, PriceHistoryPoint } from '../types';
+import { MiningInputs, PriceSource, SyncStatus, NetworkStats, PriceHistoryPoint, PriceSourceName } from '../types';
 
 interface SyncState {
   syncStatus: SyncStatus;
@@ -9,8 +9,8 @@ interface SyncState {
   countdown: number;
   isStale: boolean;
   allPrices: PriceSource[];
-  priceSource: string | null;
-  selectedPriceSource: string;
+  priceSource: PriceSourceName | null;
+  selectedPriceSource: PriceSourceName;
   networkStats: NetworkStats;
   priceHistory: PriceHistoryPoint[];
 }
@@ -28,7 +28,7 @@ interface StatsApiResponse {
   stale?: boolean;
   lastSyncTime?: number;
   lastSuccessfulFetchTime?: number;
-  priceSource?: string;
+  priceSource?: PriceSourceName;
   exchangeRate?: number | null;
   coins?: Array<{ price?: number }>;
   prices?: {
@@ -62,7 +62,7 @@ interface ChartApiResponse {
  *   计数器到 0 时触发一次 fetch；fetchingRef 保护并发
  */
 export function useRealtimeSync(
-  initialPriceSource: string,
+  initialPriceSource: PriceSourceName,
   onInputsUpdate: (updater: (prev: MiningInputs) => MiningInputs) => void,
   initialNetworkStats?: NetworkStats,
   initialPriceHistory?: PriceHistoryPoint[],
@@ -73,8 +73,8 @@ export function useRealtimeSync(
   const [countdown, setCountdown] = useState(POLL_INTERVAL_SEC);
   const [isStale, setIsStale] = useState(false);
   const [allPrices, setAllPrices] = useState<PriceSource[]>([]);
-  const [selectedPriceSource, setSelectedPriceSource] = useState<string>('Pearl OTC');
-  const [priceSource, setPriceSource] = useState<string | null>(initialPriceSource);
+  const [selectedPriceSource, setSelectedPriceSource] = useState<PriceSourceName>('Pearl OTC');
+  const [priceSource, setPriceSource] = useState<PriceSourceName | null>(initialPriceSource);
   const [networkStats, setNetworkStats] = useState<NetworkStats>(
     initialNetworkStats || { networkHashrate: 'N/A', networkHashrateTH: 0, blockReward: 0, dailyGlobalOutput: 0, avgBlockTime: 'N/A', hashrateYield: 0 }
   );
@@ -90,18 +90,19 @@ export function useRealtimeSync(
 
   // 选择价格来源（依赖稳定）
   const handleSelectPrice = useCallback((name: string, price: number) => {
-    setSelectedPriceSource(name);
+    const safeName = name as PriceSourceName;
+    setSelectedPriceSource(safeName);
     onInputsUpdateRef.current((prev) => ({ ...prev, coinPrice: price }));
-    setPriceSource(name);
+    setPriceSource(safeName);
     try {
-      localStorage.setItem(PRICE_SOURCE_KEY, name);
+      localStorage.setItem(PRICE_SOURCE_KEY, safeName);
     } catch (e) {
       if (process.env.NODE_ENV !== 'production') console.warn('[useRealtimeSync] save price source failed:', e);
     }
   }, []);
 
   // 解析 API 返回数据（无 React 闭包依赖：通过 ref 取最新选源）
-  const processApiData = useCallback((data: StatsApiResponse, overrideSource?: string): number | null => {
+  const processApiData = useCallback((data: StatsApiResponse, overrideSource?: PriceSourceName): number | null => {
     setIsStale(data.stale === true);
 
     const coinData = data.coins?.[0] || {};
@@ -122,7 +123,7 @@ export function useRealtimeSync(
       priceList.find((p) => p.name === 'Pearl OTC') ||
       priceList[0];
     const selectedPrice = selectedEntry?.price ?? coinData.price ?? null;
-    const sourceName = selectedEntry?.name ?? data.priceSource ?? 'unknown';
+    const sourceName: PriceSourceName = (selectedEntry?.name as PriceSourceName | undefined) ?? data.priceSource ?? 'unknown';
 
     // 使用 API 返回的 hashrateYield
     const yieldPerTH = data.networkStats?.hashrateYield || 0;
@@ -159,7 +160,7 @@ export function useRealtimeSync(
   }, []);
 
   // 从 API 同步数据
-  const fetchRealtimeData = useCallback(async (overrideSource?: string): Promise<boolean> => {
+  const fetchRealtimeData = useCallback(async (overrideSource?: PriceSourceName): Promise<boolean> => {
     try {
       const response = await fetch(`/api/stats?t=${Date.now()}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -239,10 +240,10 @@ export function useRealtimeSync(
   useEffect(() => {
     let savedSource = selectedPriceSourceRef.current;
 
-    // 读取记住的价格来源
+    // 读取记住的价格来源（窄化为联合字面量，未知值忽略）
     try {
       const saved = localStorage.getItem(PRICE_SOURCE_KEY);
-      if (saved) {
+      if (saved === 'Pearl OTC' || saved === 'SafeTrade' || saved === 'OKX Web3') {
         savedSource = saved;
         setSelectedPriceSource(saved);
         setPriceSource(saved);

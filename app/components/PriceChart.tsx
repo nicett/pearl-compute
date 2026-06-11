@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import type { IChartApi, ISeriesApi, UTCTimestamp, ColorType } from 'lightweight-charts';
 import { PriceHistoryPoint } from '../types';
 
 interface PriceChartProps {
@@ -11,8 +12,8 @@ interface PriceChartProps {
 
 export default function PriceChart({ priceHistory, resolvedTheme, t }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const chartRef = useRef<any>(null);
-  const seriesRef = useRef<any>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<'Area'> | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   const isDark = resolvedTheme === 'dark';
@@ -96,7 +97,7 @@ export default function PriceChart({ priceHistory, resolvedTheme, t }: PriceChar
           }
         }
         const lineData = displayData.map((p) => ({
-          time: p.ts as any,
+          time: p.ts as UTCTimestamp,
           value: p.price,
         }));
         series.setData(lineData);
@@ -145,7 +146,7 @@ export default function PriceChart({ priceHistory, resolvedTheme, t }: PriceChar
 
     // 转换为 lightweight-charts 格式（UTCTimestamp 秒级）
     const lineData = displayData.map((p) => ({
-      time: p.ts as any,
+      time: p.ts as UTCTimestamp,
       value: p.price,
     }));
 
@@ -161,7 +162,8 @@ export default function PriceChart({ priceHistory, resolvedTheme, t }: PriceChar
 
     chartRef.current.applyOptions({
       layout: {
-        background: { type: 'solid' as const, color: isDark ? '#141414' : '#ffffff' },
+        // 这里用字面量 'solid'（= ColorType.Solid）避免再做一次动态 import 把 lightweight-charts 入口拉进来
+        background: { type: 'solid' as ColorType, color: isDark ? '#141414' : '#ffffff' },
         textColor: isDark ? '#666666' : '#999999',
       },
       grid: {

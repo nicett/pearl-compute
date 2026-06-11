@@ -47,7 +47,7 @@ export interface AssembledStatsData {
     safetrade?: PriceData;
     okx?: PriceData;
   };
-  priceSource?: string;
+  priceSource?: 'Pearl OTC' | 'SafeTrade' | 'OKX Web3';
   exchangeRate?: number;
   exchangeRateUpdateTime?: string;
   networkStats: {

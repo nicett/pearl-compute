@@ -1,12 +1,12 @@
 'use client';
 
-import { SyncStatus } from '../types';
+import { SyncStatus, PriceSourceName } from '../types';
 
 interface SyncStatusBarProps {
   syncStatus: SyncStatus;
   isStale: boolean;
   countdown: number;
-  priceSource: string | null;
+  priceSource: PriceSourceName | null;
   lastSyncTs: number | null;
   formattedSyncTime: string;
   t: (key: string) => string;

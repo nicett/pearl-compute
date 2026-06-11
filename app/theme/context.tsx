@@ -40,7 +40,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setThemeState(saved);
       }
     } catch (e) {
-      // Ignore
+      if (process.env.NODE_ENV !== 'production') console.warn('[theme] read theme failed:', e);
     }
   }, []);
 
@@ -71,7 +71,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem('pearl_theme', newTheme);
     } catch (e) {
-      // Ignore
+      if (process.env.NODE_ENV !== 'production') console.warn('[theme] write theme failed:', e);
     }
   }, []);
 
