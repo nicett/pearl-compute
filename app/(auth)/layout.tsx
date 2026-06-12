@@ -1,22 +1,22 @@
 /**
- * 登录 / 注册公用布局
- *
- * 居中卡片样式，复用主题色（surface / edge / muted / accent）
+ * 登录 / 注册公用布局 — 居中卡片 + 品牌头
  */
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface-dark px-4 py-12">
+    <div className="min-h-screen bg-base flex flex-col items-center justify-center px-4 py-12">
       <Link
         href="/"
-        className="text-xs text-muted tracking-[0.2em] uppercase mb-8 hover:text-accent transition-colors"
+        className="flex items-center gap-2 mb-8 text-secondary hover:text-primary transition-colors"
       >
-        ← Pearl Compute
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-hover">
+          <span className="text-white text-sm font-bold">P</span>
+        </span>
+        <span className="text-base font-semibold">Pearl Compute</span>
       </Link>
-      <div className="w-full max-w-md bg-surface border border-edge p-6 sm:p-8">
-        {children}
-      </div>
+      <div className="w-full max-w-md">{children}</div>
     </div>
   );
 }

@@ -1,6 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Trash2, ExternalLink, Copy, Pickaxe } from 'lucide-react';
+
+import { Badge, Button, Card, Metric } from '@/app/components/ui';
+import { cn } from '@/app/lib/cn';
 
 export interface WorkerEntry {
   name: string | null;
@@ -38,15 +42,14 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-// PRL grains → 人类可读 PRL 值（1 PRL = 1e8 grains）
+// PRL grains → 人类可读 PRL（1 PRL = 10^8 grains）
 function grainsToPRL(grains: string | null): string {
   if (!grains) return '—';
   try {
     const n = BigInt(grains);
-    // 用 BigInt 做整数 / 小数分离，避免 number 精度丢失
     const whole = n / 100_000_000n;
     const frac = n % 100_000_000n;
-    const fracStr = frac.toString().padStart(8, '0').slice(0, 4); // 4 位小数
+    const fracStr = frac.toString().padStart(8, '0').slice(0, 4);
     return `${whole.toString()}.${fracStr}`;
   } catch {
     return '—';
@@ -89,91 +92,136 @@ export default function MinerCard({ binding, onDelete }: Props) {
   const totalWorkers = workers.length;
   const isOnline = (snap?.workerCount ?? 0) > 0;
 
+  const externalUrl =
+    binding.poolSlug === 'pearl-herominers'
+      ? `https://pearl.herominers.com/?lang=zh#worker_stats_${binding.walletAddr}`
+      : null;
+
   return (
-    <div className="bg-surface border border-edge p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              isOnline ? 'bg-emerald-400 animate-pulse-slow' : 'bg-red-400'
-            }`}
-          />
-          <div>
-            <div className="text-sm font-semibold text-foreground tracking-wider uppercase">
-              {binding.label || maskAddress(binding.walletAddr)}
+    <Card padding="lg">
+      {/* header */}
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className={cn(
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+              isOnline ? 'bg-brand-soft text-brand' : 'bg-elevated text-tertiary',
+            )}
+          >
+            <Pickaxe className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-semibold text-primary truncate">
+                {binding.label || '未命名矿工'}
+              </h3>
+              <Badge variant={isOnline ? 'success' : 'danger'} dot>
+                {isOnline ? 'online' : 'offline'}
+              </Badge>
             </div>
-            <div className="text-[10px] text-muted/60 tracking-wider uppercase mt-0.5">
-              {binding.poolDisplayName} ·{' '}
-              <span className="font-mono">{maskAddress(binding.walletAddr)}</span>
+            <div className="flex items-center gap-2 mt-1 text-xs text-tertiary">
+              <span>{binding.poolDisplayName}</span>
+              <span>·</span>
+              <button
+                onClick={() => navigator.clipboard.writeText(binding.walletAddr)}
+                title="复制地址"
+                className="font-mono inline-flex items-center gap-1 hover:text-secondary transition-colors"
+              >
+                {maskAddress(binding.walletAddr)}
+                <Copy className="h-3 w-3" />
+              </button>
             </div>
           </div>
         </div>
-        <button
-          onClick={() => {
-            if (confirm('确定删除该绑定及其所有历史数据？')) onDelete(binding.id);
-          }}
-          className="text-[10px] text-muted/50 hover:text-red-400 tracking-wider uppercase border border-edge hover:border-red-500/40 px-2 py-1 transition-colors"
-        >
-          删除
-        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {externalUrl && (
+            <a
+              href={externalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-tertiary hover:text-brand transition-colors"
+            >
+              查看源页 <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+            onClick={() => {
+              if (confirm('确定删除该绑定及其所有历史数据？')) onDelete(binding.id);
+            }}
+          >
+            删除
+          </Button>
+        </div>
       </div>
 
-      {/* 主要指标 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        <Metric label="总算力" value={formatHashrate(snap?.hashrateHps ?? null)} color="text-indigo-400" />
-        <Metric label="未结算" value={`${grainsToPRL(snap?.balanceGrains ?? null)} PRL`} color="text-emerald-400" />
-        <Metric label="24h 已派发" value={`${grainsToPRL(snap?.paid24hGrains ?? null)} PRL`} color="text-cyan-400" />
+      {/* metrics */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <Metric
+          label="总算力"
+          value={formatHashrate(snap?.hashrateHps ?? null)}
+          tone="brand"
+        />
+        <Metric
+          label="未结算"
+          value={`${grainsToPRL(snap?.balanceGrains ?? null)} PRL`}
+          tone="default"
+        />
+        <Metric
+          label="24h 已派发"
+          value={`${grainsToPRL(snap?.paid24hGrains ?? null)} PRL`}
+          tone="success"
+        />
         <Metric
           label="在线 Worker"
           value={totalWorkers > 0 ? `${onlineWorkers}/${totalWorkers}` : '—'}
-          color={onlineWorkers === totalWorkers ? 'text-emerald-400' : 'text-amber-400'}
+          tone={onlineWorkers === totalWorkers ? 'success' : 'warning'}
         />
       </div>
 
-      {/* Workers 列表 */}
+      {/* workers table */}
       {workers.length > 0 && (
-        <details className="border-t border-edge pt-3" open>
-          <summary className="text-xs text-muted/60 tracking-wider uppercase cursor-pointer hover:text-muted">
+        <div className="rounded-md border border-subtle overflow-hidden">
+          <div className="px-3 py-2 bg-elevated border-b border-subtle text-xs font-medium text-secondary">
             Workers ({workers.length})
-          </summary>
-          <ul className="mt-3 space-y-1.5 text-xs font-mono">
+          </div>
+          <ul className="divide-y divide-subtle">
             {workers.map((w, i) => (
               <li
                 key={i}
-                className="flex items-center justify-between border-b border-edge/30 pb-1.5 last:border-b-0"
+                className="flex items-center justify-between px-3 py-2 text-sm"
               >
-                <span className="text-foreground">{w.name || '(unnamed)'}</span>
+                <span className="font-mono text-secondary truncate">
+                  {w.name || '(unnamed)'}
+                </span>
                 <span
-                  className={w.hashrate > 0 ? 'text-emerald-400' : 'text-red-400/60'}
+                  className={cn(
+                    'font-mono shrink-0',
+                    w.hashrate > 0 ? 'text-success' : 'text-tertiary',
+                  )}
                 >
                   {formatHashrate(w.hashrate)}
                 </span>
               </li>
             ))}
           </ul>
-        </details>
+        </div>
       )}
 
-      {/* 状态条 */}
-      <div className="border-t border-edge mt-4 pt-3 flex items-center justify-between text-[10px] text-muted/50 tracking-wider uppercase">
+      {/* footer */}
+      <div className="flex items-center justify-between mt-4 text-xs text-tertiary">
         {snap ? (
           <span>最近同步：{formatAge(snap.snapshotAt)}</span>
         ) : (
-          <span className="text-amber-400/70">等待首次同步…（5 分钟内）</span>
+          <span className="text-warning">等待首次同步…（5 分钟内）</span>
         )}
-        <span>绑定于 {new Date(binding.createdAt).toLocaleDateString()}</span>
+        <span className="font-mono">
+          绑定于 {new Date(binding.createdAt).toLocaleDateString()}
+        </span>
       </div>
-    </div>
-  );
-}
-
-function Metric({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="text-center p-2.5 bg-surface-dark border border-edge">
-      <div className="text-[10px] text-muted tracking-wider uppercase mb-1">
-        {label}
-      </div>
-      <div className={`text-sm font-mono font-bold ${color}`}>{value}</div>
-    </div>
+    </Card>
   );
 }

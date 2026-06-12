@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
+import { Button, Card, Input } from '@/app/components/ui';
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -19,15 +21,10 @@ export default function RegisterPage() {
     setSubmitting(true);
     setError(null);
 
-    // 1. 调注册接口
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username,
-        password,
-        email: email || undefined,
-      }),
+      body: JSON.stringify({ username, password, email: email || undefined }),
     });
 
     if (!res.ok) {
@@ -37,7 +34,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // 2. 注册成功后立即用同一份凭据登录
     const signInRes = await signIn('credentials', {
       username,
       password,
@@ -55,89 +51,63 @@ export default function RegisterPage() {
   }
 
   return (
-    <>
-      <h1 className="text-lg font-semibold tracking-[0.2em] uppercase text-foreground mb-6">
-        注册
-      </h1>
+    <Card padding="lg">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-primary">注册</h1>
+        <p className="text-sm text-tertiary mt-1">免费创建账号，开始管理你的矿工</p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="text-xs text-muted tracking-wider uppercase mb-1.5 block">
-            用户名
-          </label>
-          <input
-            type="text"
-            autoComplete="username"
-            required
-            minLength={3}
-            maxLength={32}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full bg-surface-dark border border-edge px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:border-accent transition-colors"
-          />
-          <div className="text-[10px] text-muted/60 mt-1">
-            3-32 字符，仅字母 / 数字 / _ / -
-          </div>
-        </div>
+        <Input
+          label="用户名"
+          autoComplete="username"
+          required
+          minLength={3}
+          maxLength={32}
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          hint="3-32 字符，仅字母 / 数字 / _ / -"
+        />
 
-        <div>
-          <label className="text-xs text-muted tracking-wider uppercase mb-1.5 block">
-            密码
-          </label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            maxLength={128}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-surface-dark border border-edge px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:border-accent transition-colors"
-          />
-          <div className="text-[10px] text-muted/60 mt-1">
-            至少 8 字符，含字母与数字
-          </div>
-        </div>
+        <Input
+          label="密码"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+          maxLength={128}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          hint="至少 8 字符，含字母与数字"
+        />
 
-        <div>
-          <label className="text-xs text-muted tracking-wider uppercase mb-1.5 block">
-            邮箱 <span className="text-muted/50 normal-case">(选填)</span>
-          </label>
-          <input
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-surface-dark border border-edge px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:border-accent transition-colors"
-          />
-          <div className="text-[10px] text-muted/60 mt-1">
-            用于接收预警通知与找回密码
-          </div>
-        </div>
+        <Input
+          label="邮箱"
+          labelHint="选填"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          hint="用于找回密码（不验证邮箱）"
+        />
 
         {error && (
-          <div className="text-xs text-red-400 border border-red-500/30 bg-red-500/5 px-3 py-2">
+          <div className="rounded-md bg-danger/10 border border-danger/20 px-3 py-2 text-xs text-danger">
             {error}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-accent text-surface-dark text-sm font-bold tracking-wider uppercase py-2.5 hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {submitting ? '处理中…' : '注册并登录'}
-        </button>
+        <Button type="submit" loading={submitting} fullWidth>
+          注册并登录
+        </Button>
       </form>
 
-      <div className="border-t border-edge mt-6 pt-4 text-center">
-        <Link
-          href="/login"
-          className="text-xs text-muted tracking-wider uppercase hover:text-accent transition-colors"
-        >
-          已有账号？登录 →
+      <div className="border-t border-subtle mt-6 pt-4 text-center text-sm">
+        <span className="text-tertiary">已有账号？</span>{' '}
+        <Link href="/login" className="text-brand hover:text-brand-hover transition-colors font-medium">
+          直接登录
         </Link>
       </div>
-    </>
+    </Card>
   );
 }

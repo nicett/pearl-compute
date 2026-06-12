@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
+import { Button, Card, Input } from '@/app/components/ui';
+
 export default function LoginPage() {
   const router = useRouter();
   const search = useSearchParams();
@@ -37,63 +39,47 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-      <h1 className="text-lg font-semibold tracking-[0.2em] uppercase text-foreground mb-6">
-        登录
-      </h1>
+    <Card padding="lg">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-primary">登录</h1>
+        <p className="text-sm text-tertiary mt-1">欢迎回来，继续你的算力管理</p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="text-xs text-muted tracking-wider uppercase mb-1.5 block">
-            用户名
-          </label>
-          <input
-            type="text"
-            autoComplete="username"
-            required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full bg-surface-dark border border-edge px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:border-accent transition-colors"
-          />
-        </div>
+        <Input
+          label="用户名"
+          autoComplete="username"
+          required
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
 
-        <div>
-          <label className="text-xs text-muted tracking-wider uppercase mb-1.5 block">
-            密码
-          </label>
-          <input
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-surface-dark border border-edge px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:border-accent transition-colors"
-          />
-        </div>
+        <Input
+          label="密码"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
         {error && (
-          <div className="text-xs text-red-400 border border-red-500/30 bg-red-500/5 px-3 py-2">
+          <div className="rounded-md bg-danger/10 border border-danger/20 px-3 py-2 text-xs text-danger">
             {error}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-accent text-surface-dark text-sm font-bold tracking-wider uppercase py-2.5 hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {submitting ? '登录中…' : '登录'}
-        </button>
+        <Button type="submit" loading={submitting} fullWidth>
+          登录
+        </Button>
       </form>
 
-      <div className="border-t border-edge mt-6 pt-4 text-center">
-        <Link
-          href="/register"
-          className="text-xs text-muted tracking-wider uppercase hover:text-accent transition-colors"
-        >
-          没有账号？注册 →
+      <div className="border-t border-subtle mt-6 pt-4 text-center text-sm">
+        <span className="text-tertiary">还没有账号？</span>{' '}
+        <Link href="/register" className="text-brand hover:text-brand-hover transition-colors font-medium">
+          立即注册
         </Link>
       </div>
-    </>
+    </Card>
   );
 }
