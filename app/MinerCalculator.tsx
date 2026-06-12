@@ -7,7 +7,7 @@ import { useMiningCalculator } from './hooks/useMiningCalculator';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
 import { useChartManager } from './hooks/useChartManager';
 import { usePoolData } from './hooks/usePoolData';
-import { usePersistedInputs } from './hooks/useLocalStorage';
+import { useSyncedConfig } from './hooks/useSyncedConfig';
 import { formatNumber, formatSyncTime } from './utils';
 import { calcChangePercent } from './math';
 import { InitialData, MiningInputs, Currency, PriceHistoryPoint, PoolData } from './types';
@@ -51,7 +51,7 @@ export default function MinerCalculator({ initialData }: Props) {
     exchangeRate: initialData.exchangeRate,
     selectedPool: null, // 由 usePoolData hook 管理
   };
-  const [inputs, setInputs] = usePersistedInputs<MiningInputs>('miner_calc', defaults, PERSISTED_FIELDS);
+  const [inputs, setInputs] = useSyncedConfig<MiningInputs>('miner_calc', defaults, PERSISTED_FIELDS);
 
   // 保存选择矿池前的用户自定义 poolFee
   const prePoolFeeRef = useRef<number | null>(null);

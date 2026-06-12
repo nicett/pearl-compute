@@ -21,15 +21,17 @@ export function usePoolData(
   const [pools, setPools] = useState<PoolData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [selectedPool, setSelectedPool] = useState<string | null>(() => {
-    // 从 localStorage 恢复选择
+  // SSR 安全：useState 初始化器在服务端会执行，localStorage 不可用
+  // 改为 mount 后用 useEffect 异步读取
+  const [selectedPool, setSelectedPool] = useState<string | null>(null);
+  useEffect(() => {
     try {
-      return localStorage.getItem('miner_calc_selectedPool') || null;
+      const v = localStorage.getItem('miner_calc_selectedPool');
+      if (v) setSelectedPool(v);
     } catch (e) {
       if (process.env.NODE_ENV !== 'production') console.warn('[usePoolData] read selectedPool failed:', e);
-      return null;
     }
-  });
+  }, []);
 
   const onPoolChangeRef = useRef(onPoolChange);
   onPoolChangeRef.current = onPoolChange;

@@ -1,62 +1,47 @@
 /**
- * Dashboard — Sprint 1 占位页
+ * Dashboard — 用户登录后看到的计算器
  *
- * Sprint 2 会接入计算器；Sprint 3 加矿工绑定；Sprint 4 加预警
+ * 与首页同一个 MinerCalculator 组件，但因为用户已登录，
+ * 内部 useSyncedConfig 会自动接入云端，配置跨设备同步。
+ *
+ * 登出按钮在右上角（暂时复用 MinerCalculator 自带的 TopBar；
+ * 后续 Sprint 加全局 Header 时再统一）
  */
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
+
 import { auth, signOut } from '@/auth';
+import MinerCalculator from '@/app/MinerCalculator';
+import { DEFAULT_INITIAL_DATA } from '@/app/initial-data';
 
 export default async function DashboardPage() {
   const session = await auth();
-  // layout 已保证 session 存在，此处 ! 安全
-  const user = session!.user;
+  if (!session?.user) redirect('/login');
 
   return (
-    <div className="min-h-screen bg-surface-dark">
-      <header className="bg-surface border-b border-edge">
-        <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-3 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-sm font-semibold tracking-[0.2em] uppercase text-foreground"
+    <div className="min-h-screen flex flex-col">
+      {/* 临时的用户信息条 —— Sprint 3 加全局 header 时合并 */}
+      <div className="bg-surface border-b border-edge">
+        <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-2 flex items-center justify-end gap-4 text-xs tracking-wider uppercase">
+          <span className="text-muted">
+            user: <span className="text-accent font-mono">{session.user.name}</span>
+          </span>
+          <form
+            action={async () => {
+              'use server';
+              await signOut({ redirectTo: '/' });
+            }}
           >
-            Pearl Compute
-          </Link>
-          <div className="flex items-center gap-4 text-xs tracking-wider uppercase">
-            <span className="text-muted">
-              user: <span className="text-accent font-mono">{user.name}</span>
-            </span>
-            <form
-              action={async () => {
-                'use server';
-                await signOut({ redirectTo: '/' });
-              }}
+            <button
+              type="submit"
+              className="text-muted hover:text-accent transition-colors"
             >
-              <button
-                type="submit"
-                className="text-muted hover:text-accent transition-colors"
-              >
-                登出
-              </button>
-            </form>
-          </div>
+              登出
+            </button>
+          </form>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-[1600px] mx-auto px-4 lg:px-6 py-12">
-        <div className="bg-surface border border-edge p-8">
-          <h1 className="text-base font-semibold tracking-[0.2em] uppercase text-foreground mb-4">
-            Dashboard
-          </h1>
-          <p className="text-sm text-muted leading-relaxed">
-            欢迎，{user.name}。Sprint 1 已完成 — 注册 / 登录 / 路由保护就绪。
-          </p>
-          <ul className="mt-6 space-y-2 text-xs text-muted/70 tracking-wider uppercase">
-            <li>Sprint 2 ：计算器配置云端同步</li>
-            <li>Sprint 3 ：矿工绑定 + 后台数据同步</li>
-            <li>Sprint 4 ：价格预警 + 邮件通知</li>
-          </ul>
-        </div>
-      </main>
+      <MinerCalculator initialData={DEFAULT_INITIAL_DATA} />
     </div>
   );
 }
