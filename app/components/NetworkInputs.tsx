@@ -1,6 +1,9 @@
 'use client';
 
 import { Currency, MiningInputs, MiningResults } from '../types';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import InfoIcon from './InfoIcon';
 
 interface NetworkInputsProps {
@@ -22,61 +25,70 @@ export default function NetworkInputs({
 
   return (
     <div className="space-y-4">
-      <div className="input-group relative">
-        <div className="flex justify-between items-end mb-2 flex-wrap gap-1">
-          <label className="mb-0 text-indigo-400 flex-shrink-0">
-            {t('hashrateYield')}
-          </label>
-          <span className="text-[10px] text-indigo-400/60 font-medium border border-indigo-500/20 px-1.5 py-0.5 tracking-wider uppercase">
+      {/* hashrate yield —— 只读，但显示单卡 yield 标签 */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center flex-wrap gap-1">
+          <Label htmlFor="hashrateYield">{t('hashrateYield')}</Label>
+          <Badge variant="secondary" className="font-mono text-[10px]">
             {t('singleCardYield')}: {results.singleCardHourlyCoins.toFixed(5)}
-          </span>
+          </Badge>
         </div>
-        <input
+        <Input
+          id="hashrateYield"
           type="number"
           value={inputs.hashrateYield.toFixed(6)}
           step="0.000001"
           readOnly
-          className="bg-surface text-muted cursor-not-allowed border-edge"
+          className="font-mono bg-muted/50 cursor-not-allowed"
         />
       </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div className="input-group">
-          <label className="flex items-center gap-1">
+        {/* poolFee */}
+        <div className="space-y-2">
+          <Label htmlFor="poolFee" className="flex items-center gap-1">
             {t('poolFee')}
             {isPoolSelected && <InfoIcon tooltip={t('controlledByPool')} />}
-          </label>
-          <input
+          </Label>
+          <Input
+            id="poolFee"
             type="number"
             value={inputs.poolFee}
             step="0.1"
             min="0"
             max="50"
             readOnly={isPoolSelected}
-            className={isPoolSelected ? 'bg-surface text-muted cursor-not-allowed border-edge' : ''}
+            className={`font-mono ${isPoolSelected ? 'bg-muted/50 cursor-not-allowed' : ''}`}
             onChange={(e) => onInputChange('poolFee', e.target.value)}
           />
         </div>
-        <div className="input-group">
-          <label>{t('electricityPrice')}</label>
-          <input
+
+        {/* electricityPrice */}
+        <div className="space-y-2">
+          <Label htmlFor="electricityPrice">{t('electricityPrice')}</Label>
+          <Input
+            id="electricityPrice"
             type="number"
             value={inputs.electricityPrice}
             step="0.01"
             min="0"
             max="10"
             onChange={(e) => onInputChange('electricityPrice', e.target.value)}
+            className="font-mono"
           />
         </div>
       </div>
+
       {currency === 'CNY' && (
-        <div className="input-group">
-          <label>{t('exchangeRate')}</label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="exchangeRate">{t('exchangeRate')}</Label>
+          <Input
+            id="exchangeRate"
             type="number"
             value={inputs.exchangeRate.toFixed(2)}
             step="0.01"
             readOnly
-            className="bg-surface text-muted cursor-not-allowed border-edge"
+            className="font-mono bg-muted/50 cursor-not-allowed"
           />
         </div>
       )}

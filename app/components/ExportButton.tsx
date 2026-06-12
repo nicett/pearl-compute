@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { Check, Copy } from 'lucide-react';
+
 import { Currency, MiningResults } from '../types';
 import { formatCurrency, formatNumber } from '../utils';
+import { Button } from '@/components/ui/button';
 
 interface ExportButtonProps {
   results: MiningResults;
@@ -54,16 +57,18 @@ export default function ExportButton({ results, currency, t }: ExportButtonProps
   }, [generateSummary]);
 
   return (
-    <button
-      onClick={handleCopy}
-      className="text-sm tracking-wider uppercase text-muted hover:text-accent transition-colors duration-150 px-3 py-1.5 border border-edge hover:border-accent"
-      title={t('exportSummary')}
-    >
+    <Button variant="outline" size="sm" onClick={handleCopy} title={t('exportSummary')}>
       {copied ? (
-        <span className="text-emerald-400">[OK] {t('copied')}</span>
+        <>
+          <Check className="text-success" />
+          {t('copied')}
+        </>
       ) : (
-        <span>{'[>]'} {t('exportSummary')}</span>
+        <>
+          <Copy />
+          {t('exportSummary')}
+        </>
       )}
-    </button>
+    </Button>
   );
 }

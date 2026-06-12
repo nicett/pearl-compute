@@ -1,8 +1,6 @@
 /**
- * Dashboard — 用户登录后看到的计算器
- *
- * 注：Phase 3 之前 MinerCalculator 内部仍是旧风格（颜色会"裸奔"），
- * 等 Phase 3 重写计算器主页后整页统一
+ * Dashboard — 用户登录后的计算器
+ * 外层 AppShell 已带 header，MinerCalculator 不渲染自己的 TopBar
  */
 import { redirect } from 'next/navigation';
 
@@ -17,7 +15,7 @@ export default async function DashboardPage() {
 
   return (
     <AppShell>
-      <MinerCalculator initialData={DEFAULT_INITIAL_DATA} />
+      <MinerCalculator initialData={DEFAULT_INITIAL_DATA} showTopBar={false} />
     </AppShell>
   );
 }

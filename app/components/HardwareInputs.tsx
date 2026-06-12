@@ -1,6 +1,8 @@
 'use client';
 
 import { Currency } from '../types';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface HardwareInputsProps {
   gpuCount: number;
@@ -25,62 +27,80 @@ export default function HardwareInputs({
 }: HardwareInputsProps) {
   return (
     <div className="space-y-4">
-      <div className="input-group">
-        <label>{t('gpuCount')}</label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="gpuCount">{t('gpuCount')}</Label>
+        <Input
+          id="gpuCount"
           type="number"
           value={gpuCount}
           step="1"
           min="1"
           max="1000"
           onChange={(e) => onInputChange('gpuCount', e.target.value)}
+          className="font-mono"
         />
       </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div className="input-group">
-          <label>{t('cardPrice')} ({currency})</label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="cardPrice">
+            {t('cardPrice')} <span className="text-muted-foreground font-normal">({currency})</span>
+          </Label>
+          <Input
+            id="cardPrice"
             type="number"
             value={cardPrice}
             step="100"
             min="0"
             max="100000"
             onChange={(e) => onInputChange('cardPrice', e.target.value)}
+            className="font-mono"
           />
         </div>
-        <div className="input-group">
-          <label>{t('residualValue')} ({currency})</label>
-          <input
+
+        <div className="space-y-2">
+          <Label htmlFor="residualValue">
+            {t('residualValue')} <span className="text-muted-foreground font-normal">({currency})</span>
+          </Label>
+          <Input
+            id="residualValue"
             type="number"
             value={residualValue}
             step="100"
             min="0"
             max="100000"
             onChange={(e) => onInputChange('residualValue', e.target.value)}
+            className="font-mono"
           />
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div className="input-group">
-          <label>{t('powerCons')}</label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="powerCons">{t('powerCons')}</Label>
+          <Input
+            id="powerCons"
             type="number"
             value={powerCons}
             step="10"
             min="0"
             max="2000"
             onChange={(e) => onInputChange('powerCons', e.target.value)}
+            className="font-mono"
           />
         </div>
-        <div className="input-group">
-          <label>{t('gpuHashrate')}</label>
-          <input
+
+        <div className="space-y-2">
+          <Label htmlFor="gpuHashrate">{t('gpuHashrate')}</Label>
+          <Input
+            id="gpuHashrate"
             type="number"
             value={gpuHashrate}
             step="1"
             min="0"
             max="10000"
             onChange={(e) => onInputChange('gpuHashrate', e.target.value)}
+            className="font-mono"
           />
         </div>
       </div>

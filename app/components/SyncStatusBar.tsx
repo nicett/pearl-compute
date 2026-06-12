@@ -1,6 +1,7 @@
 'use client';
 
 import { SyncStatus, PriceSourceName } from '../types';
+import { cn } from '@/lib/utils';
 
 interface SyncStatusBarProps {
   syncStatus: SyncStatus;
@@ -21,19 +22,23 @@ export default function SyncStatusBar({
   formattedSyncTime,
   t,
 }: SyncStatusBarProps) {
-  const statusColor = syncStatus === 'error'
-    ? 'text-red-400'
+  const dotColor = syncStatus === 'error'
+    ? 'bg-destructive'
     : isStale
-    ? 'text-amber-400'
-    : 'text-emerald-400';
+    ? 'bg-warning'
+    : 'bg-success';
+
+  const textColor = syncStatus === 'error'
+    ? 'text-destructive'
+    : isStale
+    ? 'text-warning'
+    : 'text-success';
 
   return (
-    <div className="mb-4">
-      <div className="w-full bg-surface-dark border border-edge text-muted text-sm py-3 px-4 flex justify-center items-center gap-2 tracking-wider uppercase">
-        <span className={`w-2 h-2 rounded-full ${
-          syncStatus === 'error' ? 'bg-red-400' : isStale ? 'bg-amber-400' : 'bg-emerald-400'
-        } animate-pulse-slow`} />
-        <span className={statusColor}>
+    <div>
+      <div className="rounded-md border bg-muted/30 py-2.5 px-3 flex justify-center items-center gap-2 text-sm">
+        <span className={cn('w-2 h-2 rounded-full animate-pulse-slow', dotColor)} />
+        <span className={textColor}>
           {syncStatus === 'error'
             ? t('syncFailed')
             : isStale
@@ -42,15 +47,12 @@ export default function SyncStatusBar({
         </span>
       </div>
       <div className="flex justify-between items-center mt-2 px-1">
-        <span className={`text-xs text-red-400 tracking-wider uppercase ${syncStatus === 'error' ? '' : 'hidden'}`}>
-          {t('syncError')}
-        </span>
         {priceSource && syncStatus === 'success' && (
-          <span className="text-xs text-emerald-400 tracking-wider uppercase">
+          <span className="text-xs text-success">
             {t('priceSource')}: {priceSource}
           </span>
         )}
-        <span className="text-xs text-muted/50 font-mono">
+        <span className="text-xs text-muted-foreground/60 font-mono ml-auto">
           {lastSyncTs ? `${t('lastSync')}: ${formattedSyncTime}` : t('notSynced')}
         </span>
       </div>

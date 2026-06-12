@@ -40,8 +40,8 @@ export function useChartManager(
   useEffect(() => {
     if (!compChartRef.current || !projChartRef.current) return;
 
-    Chart.defaults.font.family = '"IBM Plex Mono", monospace';
-    Chart.defaults.color = resolvedTheme === 'dark' ? '#666' : '#999';
+    Chart.defaults.font.family = 'Inter, "PingFang SC", system-ui, sans-serif';
+    Chart.defaults.color = resolvedTheme === 'dark' ? '#a1a4b0' : '#525560';
 
     // 饼图
     compChartInstance.current = new Chart(compChartRef.current, {
@@ -88,8 +88,8 @@ export function useChartManager(
           {
             label: t('cumulativeNet'),
             data: [0, 0, 0, 0],
-            backgroundColor: resolvedTheme === 'dark' ? 'rgba(0, 229, 255, 0.5)' : 'rgba(0, 184, 212, 0.4)',
-            borderColor: resolvedTheme === 'dark' ? '#00e5ff' : '#00b8d4',
+            backgroundColor: resolvedTheme === 'dark' ? 'rgba(124, 58, 237, 0.5)' : 'rgba(124, 58, 237, 0.35)',
+            borderColor: resolvedTheme === 'dark' ? '#7c3aed' : '#6d28d9',
             borderWidth: 1,
             borderRadius: 0,
             order: 2,

@@ -2,6 +2,14 @@
 
 import { PoolData } from '../types';
 import { formatNumber } from '../utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 interface PoolSelectorProps {
   pools: PoolData[];
@@ -20,7 +28,7 @@ function formatHashrate(hashrateHps: number): string {
   return `${formatNumber(hashrateTH, 2)} TH/s`;
 }
 
-/** 矿池选择器组件 */
+/** 矿池选择器 */
 export default function PoolSelector({
   pools,
   selectedPool,
@@ -30,63 +38,64 @@ export default function PoolSelector({
   t,
 }: PoolSelectorProps) {
   const currentPool = selectedPool ? pools.find((p) => p.slug === selectedPool) : null;
+  // shadcn Select 不接受空字符串作为 value，用一个特殊值代表「全网」
+  const ALL = '__all__';
 
   return (
     <div className="space-y-3">
-      {/* 选择器标签 */}
       <div className="flex items-center justify-between">
-        <label className="text-xs text-muted tracking-wider uppercase">
-          {t('selectPool')}
-        </label>
+        <Label htmlFor="poolSelector">{t('selectPool')}</Label>
         {loading && (
-          <span className="text-[10px] text-muted/50 animate-pulse">
+          <span className="text-[10px] text-muted-foreground/60 animate-pulse">
             {t('loading')}
           </span>
         )}
       </div>
 
-      {/* 下拉选择框 */}
-      <select
-        value={selectedPool || ''}
-        onChange={(e) => onSelectPool(e.target.value || null)}
+      <Select
+        value={selectedPool ?? ALL}
+        onValueChange={(v) => onSelectPool(v === ALL ? null : v)}
         disabled={loading || error}
-        className="input-group-select w-full bg-surface-dark border border-edge text-sm px-3 py-2 text-gray-200 focus:outline-none focus:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <option value="">{t('allNetwork')}</option>
-        {pools.map((pool) => (
-          <option key={pool.slug} value={pool.slug}>
-            {pool.name} ({pool.fee_percent}% {t('fee')})
-          </option>
-        ))}
-      </select>
+        <SelectTrigger id="poolSelector">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>{t('allNetwork')}</SelectItem>
+          {pools.map((pool) => (
+            <SelectItem key={pool.slug} value={pool.slug}>
+              {pool.name} ({pool.fee_percent}% {t('fee')})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      {/* 矿池详情 */}
       {currentPool && (
-        <div className="bg-surface border border-edge p-3 space-y-2">
+        <div className="rounded-md border bg-muted/30 p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted">{t('poolHashrate')}</span>
-            <span className="text-xs font-mono text-gray-200">
+            <span className="text-xs text-muted-foreground">{t('poolHashrate')}</span>
+            <span className="text-xs font-mono text-foreground">
               {currentPool.reported_hashrate_hps
                 ? formatHashrate(currentPool.reported_hashrate_hps)
                 : 'N/A'}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted">{t('poolBlocks24h')}</span>
-            <span className="text-xs font-mono text-gray-200">
+            <span className="text-xs text-muted-foreground">{t('poolBlocks24h')}</span>
+            <span className="text-xs font-mono text-foreground">
               {currentPool.blocks_24h}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted">{t('poolShare')}</span>
-            <span className="text-xs font-mono text-gray-200">
+            <span className="text-xs text-muted-foreground">{t('poolShare')}</span>
+            <span className="text-xs font-mono text-foreground">
               {currentPool.pool_share_24h.toFixed(2)}%
             </span>
           </div>
           {currentPool.reported_hashrate_hps && currentPool.reported_hashrate_hps > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted">{t('poolYield')}</span>
-              <span className="text-xs font-mono text-gray-200">
+              <span className="text-xs text-muted-foreground">{t('poolYield')}</span>
+              <span className="text-xs font-mono text-foreground">
                 {calcPoolYield(currentPool).toFixed(6)}
               </span>
             </div>
@@ -94,9 +103,8 @@ export default function PoolSelector({
         </div>
       )}
 
-      {/* 错误提示 */}
       {error && (
-        <div className="text-[10px] text-red-400/70">
+        <div className="text-[10px] text-destructive/80">
           {t('poolFetchError')}
         </div>
       )}
@@ -104,10 +112,9 @@ export default function PoolSelector({
   );
 }
 
-/** 计算矿池 yield */
 function calcPoolYield(pool: PoolData): number {
   if (!pool.reported_hashrate_hps || pool.reported_hashrate_hps <= 0) return 0;
-  const dailyOutput = pool.reward_24h_grains / 1e8; // grains → PRL
-  const hashrateTH = pool.reported_hashrate_hps / 1e12; // H/s → TH/s
+  const dailyOutput = pool.reward_24h_grains / 1e8;
+  const hashrateTH = pool.reported_hashrate_hps / 1e12;
   return dailyOutput / 24 / hashrateTH;
 }
