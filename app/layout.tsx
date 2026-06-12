@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { I18nProvider } from './i18n/context';
 import { ThemeProvider } from './theme/context';
+import { AuthSessionProvider } from './auth-session-provider';
 
 export const metadata: Metadata = {
   title: 'Pearl Mining Profit Calculator',
@@ -35,7 +36,9 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col overflow-x-hidden w-full">
         <ThemeProvider>
           <I18nProvider>
-            {children}
+            <AuthSessionProvider>
+              {children}
+            </AuthSessionProvider>
           </I18nProvider>
         </ThemeProvider>
       </body>
