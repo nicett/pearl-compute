@@ -10,7 +10,6 @@ import { redirect } from 'next/navigation';
 import { auth, signOut } from '@/auth';
 import MinerCalculator from '@/app/MinerCalculator';
 import { DEFAULT_INITIAL_DATA } from '@/app/initial-data';
-import NotificationBell from '@/app/components/notifications/NotificationBell';
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -26,12 +25,8 @@ export default async function DashboardPage() {
             <Link href="/miners" className="text-muted hover:text-accent transition-colors">
               Miners
             </Link>
-            <Link href="/alerts" className="text-muted hover:text-accent transition-colors">
-              Alerts
-            </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <NotificationBell />
             <span className="text-muted">
               user: <span className="text-accent font-mono">{session.user.name}</span>
             </span>

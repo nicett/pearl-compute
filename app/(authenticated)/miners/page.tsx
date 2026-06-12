@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { auth, signOut } from '@/auth';
 import { redirect } from 'next/navigation';
 import MinerBindingList from '@/app/components/miners/MinerBindingList';
-import NotificationBell from '@/app/components/notifications/NotificationBell';
 
 export default async function MinersPage() {
   const session = await auth();
@@ -31,13 +30,9 @@ export default async function MinersPage() {
               <Link href="/miners" className="text-accent">
                 Miners
               </Link>
-              <Link href="/alerts" className="text-muted hover:text-accent transition-colors">
-                Alerts
-              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4 text-xs tracking-wider uppercase">
-            <NotificationBell />
             <span className="text-muted">
               user: <span className="text-accent font-mono">{session.user.name}</span>
             </span>
