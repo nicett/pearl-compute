@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Pickaxe } from 'lucide-react';
 
-import { Card } from '@/app/components/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AddMinerForm from './AddMinerForm';
 import MinerCard, { type Binding } from './MinerCard';
 
@@ -52,35 +52,45 @@ export default function MinerBindingList() {
 
   return (
     <div className="space-y-6">
-      {/* 添加表单 */}
-      <Card title="添加矿工绑定" subtitle="支持 HeroMiners 系矿池，地址必须以 prl1 开头">
-        <AddMinerForm onAdded={reload} />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">添加矿工绑定</CardTitle>
+          <CardDescription>
+            支持 HeroMiners 系矿池，地址必须以 prl1 开头
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AddMinerForm onAdded={reload} />
+        </CardContent>
       </Card>
 
-      {/* 列表 */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-primary">
-            已绑定 <span className="text-tertiary font-normal">({bindings?.length ?? 0})</span>
+          <h2 className="text-sm font-semibold">
+            已绑定 <span className="text-muted-foreground font-normal">({bindings?.length ?? 0})</span>
           </h2>
-          {loadError && <span className="text-xs text-danger">{loadError}</span>}
+          {loadError && <span className="text-xs text-destructive">{loadError}</span>}
         </div>
 
         {bindings === null ? (
-          <Card padding="lg">
-            <div className="text-center text-sm text-tertiary py-4">加载中…</div>
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              加载中…
+            </CardContent>
           </Card>
         ) : bindings.length === 0 ? (
-          <Card padding="lg">
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand mb-3">
-                <Pickaxe className="h-6 w-6" />
+          <Card>
+            <CardContent className="py-12">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+                  <Pickaxe className="h-6 w-6" />
+                </div>
+                <div className="text-sm font-medium mb-1">还没有绑定</div>
+                <div className="text-xs text-muted-foreground max-w-xs">
+                  在上面添加你的第一个矿工地址，系统会每 5 分钟同步一次实时数据
+                </div>
               </div>
-              <div className="text-sm font-medium text-primary mb-1">还没有绑定</div>
-              <div className="text-xs text-tertiary max-w-xs">
-                在上面添加你的第一个矿工地址，系统会每 5 分钟同步一次实时数据
-              </div>
-            </div>
+            </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">

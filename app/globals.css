@@ -1,6 +1,5 @@
 /* === Pearl Compute global styles ===
- * 极简版：只保留字体、scrollbar、selection、双主题 CSS 变量
- * 组件级别样式都搬到 components/ui/* 里（Tailwind 类）
+ * shadcn 标准 token 系统 + 紫色主品牌色 + 双主题
  */
 
 @import '@fontsource/inter/400.css';
@@ -13,84 +12,119 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === 双主题 CSS 变量 ===
- * 通过 :root（默认）= dark；html:not(.dark) = light
- * tailwind.config.js 通过 rgb(var(--xxx)) 引用
- * 值采用空格分隔的 RGB（无 alpha），让 Tailwind 的 / <alpha-value> 工作
- */
-:root,
-html.dark {
-  --bg-base: 10 11 15;          /* #0A0B0F */
-  --bg-card: 19 20 26;          /* #13141A */
-  --bg-elevated: 26 28 36;      /* #1A1C24 */
-  --bg-input: 15 16 21;         /* #0F1015 */
-  --border-subtle: 31 33 41;    /* #1F2129 */
-  --border-default: 42 45 56;   /* #2A2D38 */
-  --text-primary: 247 247 250;  /* #F7F7FA */
-  --text-secondary: 161 164 176;/* #A1A4B0 */
-  --text-tertiary: 107 111 128; /* #6B6F80 */
-  --brand: 124 58 237;          /* #7C3AED */
-  --brand-hover: 139 92 246;    /* #8B5CF6 */
-  --success: 16 185 129;        /* #10B981 */
-  --danger: 239 68 68;          /* #EF4444 */
-  --warning: 245 158 11;        /* #F59E0B */
-}
+@layer base {
+  /* === Light theme (default) === */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 4%;
 
-html:not(.dark) {
-  --bg-base: 250 250 250;       /* #FAFAFA */
-  --bg-card: 255 255 255;       /* #FFFFFF */
-  --bg-elevated: 255 255 255;   /* #FFFFFF */
-  --bg-input: 244 244 247;      /* #F4F4F7 */
-  --border-subtle: 229 231 235; /* #E5E7EB */
-  --border-default: 209 213 219;/* #D1D5DB */
-  --text-primary: 15 16 21;     /* #0F1015 */
-  --text-secondary: 82 85 96;   /* #525560 */
-  --text-tertiary: 156 163 175; /* #9CA3AF */
-  --brand: 124 58 237;          /* #7C3AED 同 dark */
-  --brand-hover: 109 40 217;    /* #6D28D9 浅色场景反向更深 */
-  --success: 5 150 105;         /* #059669 */
-  --danger: 220 38 38;           /* #DC2626 */
-  --warning: 217 119 6;          /* #D97706 */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 4%;
+
+    /* 紫色主品牌：#7C3AED ≈ hsl(263 70% 56%) */
+    --primary: 263 70% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    --accent: 263 70% 96%; /* 浅紫底色 (hover/选中) */
+    --accent-foreground: 263 70% 30%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 263 70% 56%;
+
+    --radius: 0.5rem;
+  }
+
+  /* === Dark theme === */
+  .dark {
+    --background: 240 10% 4%;       /* #0A0B0F */
+    --foreground: 0 0% 96%;
+
+    --card: 240 9% 8%;              /* #13141A */
+    --card-foreground: 0 0% 96%;
+
+    --popover: 240 9% 11%;          /* #1A1C24 */
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 263 70% 60%;         /* 略亮紫色 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 6% 13%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 240 6% 13%;
+    --muted-foreground: 240 5% 64%;
+
+    --accent: 263 70% 18%;          /* 深紫底色 */
+    --accent-foreground: 263 90% 80%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 240 6% 16%;
+    --input: 240 6% 16%;
+    --ring: 263 70% 60%;
+  }
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
   body {
-    @apply font-sans bg-base text-primary antialiased;
-    /* 移动端禁止双指缩放抖动；保留正常滚动 */
+    @apply bg-background text-foreground font-sans antialiased;
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* 选中文字色调跟随品牌 */
   ::selection {
-    background: rgb(124 58 237 / 0.25);
+    background: hsl(var(--primary) / 0.25);
     color: inherit;
   }
 }
 
-/* === Scrollbar（紫色 hover） === */
+/* === Scrollbar === */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--border-default));
+  background: hsl(var(--border));
   border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--brand));
+  background: hsl(var(--primary));
 }
-
-/* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgb(var(--border-default)) transparent;
+  scrollbar-color: hsl(var(--border)) transparent;
 }

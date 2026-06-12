@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Calculator, Pickaxe, Moon, Sun, Monitor } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { cn } from '@/app/lib/cn';
+import { cn } from '@/lib/utils';
 import { useTheme } from '@/app/theme/context';
 import { UserMenu } from './UserMenu';
 
@@ -16,33 +16,18 @@ const NAV_ITEMS = [
 
 /**
  * AppShell — 登录后页面通用外壳
- *
- * 顶部 nav：品牌 + 主导航 + 主题切换 + 用户菜单
- * 内容区：children
- *
- * 用法（在 (authenticated)/layout.tsx 或单页里）：
- *   <AppShell><PageContent /></AppShell>
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-base text-primary flex flex-col">
-      {/* Top nav */}
-      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur border-b border-subtle">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur border-b">
         <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-6 min-w-0">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 text-base font-semibold text-primary"
-            >
-              <span
-                className={cn(
-                  'flex h-7 w-7 items-center justify-center rounded-md',
-                  'bg-gradient-to-br from-brand to-brand-hover',
-                )}
-              >
-                <span className="text-white text-xs font-bold">P</span>
+            <Link href="/dashboard" className="flex items-center gap-2 text-base font-semibold">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70">
+                <span className="text-primary-foreground text-xs font-bold">P</span>
               </span>
               <span className="hidden sm:inline">Pearl Compute</span>
             </Link>
@@ -56,11 +41,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium',
-                      'transition-colors',
+                      'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                       active
-                        ? 'bg-brand-soft text-brand'
-                        : 'text-secondary hover:text-primary hover:bg-elevated',
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -78,7 +62,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Content */}
       <main className="flex-1">{children}</main>
     </div>
   );
@@ -93,7 +76,7 @@ function ThemeToggle() {
   ] as const;
 
   return (
-    <div className="hidden sm:flex items-center rounded-md border border-subtle p-0.5">
+    <div className="hidden sm:flex items-center rounded-md border p-0.5">
       {options.map((opt) => {
         const Icon = opt.icon;
         const active = theme === opt.value;
@@ -106,8 +89,8 @@ function ThemeToggle() {
             className={cn(
               'flex h-7 w-7 items-center justify-center rounded-sm transition-colors',
               active
-                ? 'bg-elevated text-primary'
-                : 'text-tertiary hover:text-secondary',
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:text-foreground',
             )}
           >
             <Icon className="h-3.5 w-3.5" />

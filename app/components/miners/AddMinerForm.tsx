@@ -1,9 +1,18 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
-import { Button, Input, Select } from '@/app/components/ui';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { listPools } from '@/app/lib/pools/registry';
 
 interface Props {
@@ -54,51 +63,57 @@ export default function AddMinerForm({ onAdded }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Select
-          label="矿池"
-          value={poolSlug}
-          onChange={(e) => setPoolSlug(e.target.value)}
-        >
-          {POOLS.map((p) => (
-            <option key={p.slug} value={p.slug}>
-              {p.displayName}
-            </option>
-          ))}
-        </Select>
+        <div className="space-y-2">
+          <Label htmlFor="pool">矿池</Label>
+          <Select value={poolSlug} onValueChange={setPoolSlug}>
+            <SelectTrigger id="pool">
+              <SelectValue placeholder="选择矿池" />
+            </SelectTrigger>
+            <SelectContent>
+              {POOLS.map((p) => (
+                <SelectItem key={p.slug} value={p.slug}>
+                  {p.displayName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 space-y-2">
+          <Label htmlFor="wallet">钱包地址</Label>
           <Input
-            label="钱包地址"
+            id="wallet"
             placeholder="prl1..."
             required
             value={walletAddr}
             onChange={(e) => setWalletAddr(e.target.value)}
+            className="font-mono"
           />
         </div>
       </div>
 
-      <Input
-        label="备注"
-        labelHint="选填"
-        placeholder="例如：主机房 5 台"
-        maxLength={64}
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-      />
+      <div className="space-y-2">
+        <Label htmlFor="label">
+          备注 <span className="text-muted-foreground font-normal text-xs">(选填)</span>
+        </Label>
+        <Input
+          id="label"
+          placeholder="例如：主机房 5 台"
+          maxLength={64}
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
+      </div>
 
       {error && (
-        <div className="rounded-md bg-danger/10 border border-danger/20 px-3 py-2 text-xs text-danger">
+        <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
           {error}
         </div>
       )}
 
       <div className="flex justify-end">
-        <Button
-          type="submit"
-          loading={submitting}
-          disabled={!walletAddr.trim()}
-          leftIcon={<Plus className="h-4 w-4" />}
-        >
+        <Button type="submit" disabled={submitting || !walletAddr.trim()}>
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus />}
           添加
         </Button>
       </div>

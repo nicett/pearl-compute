@@ -1,10 +1,10 @@
 /**
- * UI 组件预览页（仅本地开发用，不进入正式导航）
- *
- * 访问 http://localhost:3000/_ui-preview 查看所有原子组件的 dark / light 表现
+ * UI 组件预览页（仅本地开发用）
+ * 访问 http://localhost:3000/ui-preview 查看所有 shadcn 组件
  */
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import {
   Plus,
@@ -15,211 +15,253 @@ import {
   ExternalLink,
   Sun,
   Moon,
+  Monitor,
 } from 'lucide-react';
 
-import { Button, Input, Card, Badge, Metric, Select, Skeleton } from '@/app/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Metric } from '@/components/ui/metric';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/app/theme/context';
 
 export default function UiPreviewPage() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [demoInput, setDemoInput] = useState('');
-  const [demoSelect, setDemoSelect] = useState('option-1');
+  const { resolvedTheme, setTheme, theme } = useTheme();
+  const [demoSelect, setDemoSelect] = useState('opt-1');
 
   return (
-    <div className="min-h-screen bg-base text-primary p-6 sm:p-10">
+    <div className="min-h-screen bg-background text-foreground p-6 sm:p-10">
       <div className="max-w-5xl mx-auto space-y-10">
-        {/* Header */}
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">UI 组件预览</h1>
-            <p className="text-sm text-tertiary mt-1">
-              当前主题：<span className="text-brand font-mono">{resolvedTheme}</span>
+            <h1 className="text-2xl font-semibold">UI 组件预览（shadcn）</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              当前主题：<span className="text-primary font-mono">{resolvedTheme}</span>
             </p>
+            <div className="flex flex-wrap gap-3 mt-3 text-sm">
+              <Link href="/" className="text-primary hover:underline">
+                ← 首页（旧风）
+              </Link>
+              <Link href="/login" className="text-primary hover:underline">
+                登录页
+              </Link>
+              <Link href="/register" className="text-primary hover:underline">
+                注册页
+              </Link>
+              <Link href="/miners" className="text-primary hover:underline">
+                矿工页（需登录）
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={resolvedTheme === 'light' ? 'primary' : 'secondary'}
-              size="sm"
-              leftIcon={<Sun className="h-4 w-4" />}
+          <div className="flex items-center gap-1 rounded-md border p-0.5">
+            <button
               onClick={() => setTheme('light')}
+              title="浅色"
+              className={cnButton(theme === 'light')}
             >
-              Light
-            </Button>
-            <Button
-              variant={resolvedTheme === 'dark' ? 'primary' : 'secondary'}
-              size="sm"
-              leftIcon={<Moon className="h-4 w-4" />}
+              <Sun className="h-3.5 w-3.5" />
+            </button>
+            <button
               onClick={() => setTheme('dark')}
+              title="深色"
+              className={cnButton(theme === 'dark')}
             >
-              Dark
-            </Button>
+              <Moon className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setTheme('system')}
+              title="跟随系统"
+              className={cnButton(theme === 'system')}
+            >
+              <Monitor className="h-3.5 w-3.5" />
+            </button>
           </div>
         </header>
 
-        {/* Buttons */}
         <Section title="Button">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Button variant="primary">Primary</Button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <Button>Default</Button>
             <Button variant="secondary">Secondary</Button>
+            <Button variant="outline">Outline</Button>
             <Button variant="ghost">Ghost</Button>
-            <Button variant="danger">Danger</Button>
+            <Button variant="destructive">Destructive</Button>
+            <Button variant="link">Link</Button>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <Button size="sm">Small</Button>
-            <Button size="md">Medium</Button>
+            <Button size="default">Default</Button>
             <Button size="lg">Large</Button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Button leftIcon={<Plus className="h-4 w-4" />}>Add</Button>
-            <Button variant="danger" leftIcon={<Trash2 className="h-4 w-4" />}>
-              Delete
+            <Button>
+              <Plus />
+              添加
             </Button>
-            <Button loading>Loading</Button>
+            <Button variant="destructive">
+              <Trash2 />
+              删除
+            </Button>
             <Button disabled>Disabled</Button>
+            <Button size="icon" variant="outline">
+              <Pickaxe />
+            </Button>
           </div>
         </Section>
 
-        {/* Inputs */}
-        <Section title="Input / Select">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="用户名"
-              placeholder="请输入"
-              value={demoInput}
-              onChange={(e) => setDemoInput(e.target.value)}
-              hint="3-32 字符"
-            />
-            <Input
-              label="密码"
-              type="password"
-              placeholder="••••••••"
-              error="密码必须含字母与数字"
-            />
-            <Input label="备注" labelHint="选填" placeholder="例如：主机房" />
-            <Select
-              label="矿池"
-              value={demoSelect}
-              onChange={(e) => setDemoSelect(e.target.value)}
-            >
-              <option value="option-1">HeroMiners (PRL)</option>
-              <option value="option-2">Pool Fortune</option>
-              <option value="option-3">PearlHash</option>
-            </Select>
-          </div>
+        <Section title="Form (Input + Label + Select)">
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="demo-username">用户名</Label>
+                  <Input id="demo-username" placeholder="请输入" />
+                  <p className="text-xs text-muted-foreground">3-32 字符</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="demo-password">密码</Label>
+                  <Input id="demo-password" type="password" placeholder="••••••" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="demo-pool">矿池</Label>
+                  <Select value={demoSelect} onValueChange={setDemoSelect}>
+                    <SelectTrigger id="demo-pool">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="opt-1">HeroMiners (PRL)</SelectItem>
+                      <SelectItem value="opt-2">PoolFortune</SelectItem>
+                      <SelectItem value="opt-3">PearlHash</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="demo-wallet">钱包地址</Label>
+                  <Input id="demo-wallet" className="font-mono" placeholder="prl1..." />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </Section>
 
-        {/* Badges */}
         <Section title="Badge">
           <div className="flex flex-wrap gap-3">
-            <Badge>默认</Badge>
-            <Badge variant="brand">紫色</Badge>
-            <Badge variant="success" dot>
-              在线
-            </Badge>
-            <Badge variant="danger" dot>
-              离线
-            </Badge>
-            <Badge variant="warning">警告</Badge>
+            <Badge>Default</Badge>
+            <Badge variant="secondary">Secondary</Badge>
+            <Badge variant="outline">Outline</Badge>
+            <Badge variant="destructive">Destructive</Badge>
+            <Badge variant="success">Success</Badge>
+            <Badge variant="warning">Warning</Badge>
           </div>
         </Section>
 
-        {/* Cards */}
         <Section title="Card">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card title="无 actions" subtitle="一个简单的标题 + 副标题">
-              <p className="text-sm text-secondary">
-                卡片内容。背景色 / 边框 / 圆角都来自 token，可以直接换主题。
-              </p>
+            <Card>
+              <CardHeader>
+                <CardTitle>简单卡片</CardTitle>
+                <CardDescription>带标题和描述</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">这是 shadcn 标准 Card 复合组件结构。</p>
+              </CardContent>
             </Card>
-            <Card
-              title="有 actions"
-              subtitle="右上角放按钮"
-              actions={
-                <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
-                  添加
-                </Button>
-              }
-            >
-              <p className="text-sm text-secondary">含右侧操作按钮的卡片头。</p>
-            </Card>
-            <Card padding="lg" interactive>
-              <div className="flex items-center gap-3">
-                <Pickaxe className="h-5 w-5 text-brand" />
-                <span className="text-sm">可点击卡片（hover 边框变深）</span>
-              </div>
-            </Card>
-            <Card padding="none">
-              <div className="px-4 py-3 border-b border-subtle text-sm font-medium">
-                自定义内边距
-              </div>
-              <div className="p-6 text-sm text-secondary">padding=none 时手动控制</div>
+            <Card>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle>带操作按钮</CardTitle>
+                    <CardDescription>右上角放 action</CardDescription>
+                  </div>
+                  <Button size="sm">
+                    <Plus />
+                    添加
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">action 按钮放在 header 内自由排版</p>
+              </CardContent>
             </Card>
           </div>
         </Section>
 
-        {/* Metrics */}
-        <Section title="Metric">
+        <Section title="Metric（业务组件）">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <Metric label="算力" value="295.5 KH/s" />
-            <Metric label="未结算" value="1.27 PRL" tone="brand" hint="≈ $0.66" />
+            <Metric label="未结算" value="1.27 PRL" tone="primary" hint="≈ $0.66" />
             <Metric label="24h 收益" value="2.71 PRL" tone="success" trend="up" trendValue="+12.5%" />
-            <Metric label="状态" value="离线" tone="danger" />
+            <Metric label="状态" value="离线" tone="destructive" />
           </div>
         </Section>
 
-        {/* Skeleton */}
         <Section title="Skeleton">
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-1/3" />
-            <Skeleton className="h-4 w-1/2" />
-            <div className="flex gap-3">
-              <Skeleton variant="circle" className="h-12 w-12" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-3 w-3/4" />
+          <Card>
+            <CardContent className="p-6 space-y-3">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-4 w-1/2" />
+              <div className="flex gap-3 items-center">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-3 w-3/4" />
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </Section>
 
-        {/* Status combos */}
         <Section title="组合示例">
           <Card>
-            <div className="flex items-start gap-3">
-              <div className="rounded-md bg-success/10 p-2">
-                <CheckCircle className="h-5 w-5 text-success" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium">同步成功</span>
-                  <Badge variant="success" dot>
-                    online
-                  </Badge>
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-md bg-success/10 p-2">
+                  <CheckCircle className="h-5 w-5 text-success" />
                 </div>
-                <p className="text-xs text-tertiary">
-                  最近 5 分钟拉取了 1 个 binding，0 失败
-                </p>
-                <div className="flex items-center gap-3 mt-3 text-xs">
-                  <a href="#" className="text-brand inline-flex items-center gap-1 hover:underline">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium">同步成功</span>
+                    <Badge variant="success">online</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    最近 5 分钟拉取了 1 个 binding，0 失败
+                  </p>
+                  <a href="#" className="text-primary inline-flex items-center gap-1 hover:underline text-xs mt-3">
                     查看详情 <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
               </div>
-            </div>
+            </CardContent>
           </Card>
 
           <Card>
-            <div className="flex items-start gap-3">
-              <div className="rounded-md bg-danger/10 p-2">
-                <AlertCircle className="h-5 w-5 text-danger" />
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-md bg-destructive/10 p-2">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                </div>
+                <div className="flex-1">
+                  <span className="text-sm font-medium">连接失败</span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    herominers 上游 504 — 将在下次 tick 自动重试
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <span className="text-sm font-medium">连接失败</span>
-                <p className="text-xs text-tertiary mt-1">
-                  herominers 上游 504 — 将在下次 tick 自动重试
-                </p>
-              </div>
-            </div>
+            </CardContent>
           </Card>
         </Section>
       </div>
@@ -230,10 +272,17 @@ export default function UiPreviewPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-4">
-      <h2 className="text-sm font-semibold text-tertiary uppercase tracking-wider">
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
         {title}
       </h2>
       <div className="space-y-3">{children}</div>
     </section>
   );
+}
+
+function cnButton(active: boolean): string {
+  return [
+    'flex h-7 w-7 items-center justify-center rounded-sm transition-colors',
+    active ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
+  ].join(' ');
 }

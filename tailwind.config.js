@@ -7,66 +7,89 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    container: {
+      center: true,
+      padding: '1rem',
+      screens: { '2xl': '1400px' },
+    },
     extend: {
       // === 字体 ===
-      // 默认 sans 给所有文本用，mono 给数字 / 哈希 / 钱包地址用
       fontFamily: {
         sans: ['Inter', '"PingFang SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', '"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
 
-      // === 圆角（告别零圆角，引入现代柔和形态） ===
-      borderRadius: {
-        sm: '6px',
-        DEFAULT: '8px',
-        md: '8px',
-        lg: '12px',
-        xl: '16px',
-      },
-
-      // === 颜色（双主题 token；通过 CSS 变量切换） ===
-      // dark 是默认值；light 在 globals.css 里通过 :root 重写
+      // === shadcn 标准颜色（CSS 变量驱动） ===
       colors: {
-        // 背景层级
-        base: 'rgb(var(--bg-base) / <alpha-value>)',
-        card: 'rgb(var(--bg-card) / <alpha-value>)',
-        elevated: 'rgb(var(--bg-elevated) / <alpha-value>)',
-        input: 'rgb(var(--bg-input) / <alpha-value>)',
-
-        // 边框
-        subtle: 'rgb(var(--border-subtle) / <alpha-value>)',
-        line: 'rgb(var(--border-default) / <alpha-value>)',
-
-        // 文字
-        primary: 'rgb(var(--text-primary) / <alpha-value>)',
-        secondary: 'rgb(var(--text-secondary) / <alpha-value>)',
-        tertiary: 'rgb(var(--text-tertiary) / <alpha-value>)',
-
-        // 品牌（紫色）
-        brand: {
-          DEFAULT: 'rgb(var(--brand) / <alpha-value>)',
-          hover: 'rgb(var(--brand-hover) / <alpha-value>)',
-          soft: 'rgb(var(--brand) / 0.12)',
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
         },
 
-        // 状态（涨 / 跌 / 警告）
-        success: 'rgb(var(--success) / <alpha-value>)',
-        danger: 'rgb(var(--danger) / <alpha-value>)',
-        warning: 'rgb(var(--warning) / <alpha-value>)',
+        // 自定义业务色（保留语义）
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
       },
 
-      // === 阴影（dark 几乎不用；light 用低饱和软阴影） ===
-      boxShadow: {
-        card: '0 1px 3px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.02)',
-        elevated: '0 4px 12px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04)',
-        focus: '0 0 0 3px rgb(124 58 237 / 0.25)',
+      // === 圆角 ===
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
 
-      // === 动画（保留 pulse-slow） ===
+      // === 动画（shadcn 内置 + 自有） ===
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+      },
       animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },
-  plugins: [],
+  plugins: [require('tailwindcss-animate')],
 };

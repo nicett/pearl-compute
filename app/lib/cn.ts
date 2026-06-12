@@ -1,12 +1,15 @@
 /**
- * 简易 className 合并工具
+ * 合并 className —— shadcn 标准实现
  *
- * 不引入 clsx / tailwind-merge 第三方库（足够用就行）。
- * 只做：filter 假值 + space-join。
+ * clsx：处理条件式 className（filter 假值、合并字符串/对象/数组）
+ * tailwind-merge：自动去重冲突的 Tailwind 类（如 'p-2 p-4' 只保留 'p-4'）
  *
- * 使用：
- *   <div className={cn('base', isActive && 'active', someClass)} />
+ * 用法：
+ *   <div className={cn('text-red-500', isActive && 'bg-blue-100', className)} />
  */
-export function cn(...args: Array<string | false | null | undefined>): string {
-  return args.filter(Boolean).join(' ');
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }
