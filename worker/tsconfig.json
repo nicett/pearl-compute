@@ -10,6 +10,12 @@
     "incremental": false,
     "jsx": "preserve"
   },
-  "include": ["**/*.ts", "../app/lib/db.ts", "../app/lib/pools/**/*.ts", "../app/lib/validators/**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "../app/lib/db.ts",
+    "../app/lib/pools/**/*.ts",
+    "../app/lib/validators/**/*.ts",
+    "../app/lib/data-sources.ts"
+  ],
   "exclude": ["dist", "node_modules"]
 }
