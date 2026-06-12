@@ -8,55 +8,65 @@ module.exports = {
   ],
   theme: {
     extend: {
+      // === 字体 ===
+      // 默认 sans 给所有文本用，mono 给数字 / 哈希 / 钱包地址用
       fontFamily: {
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-        sans: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        sans: ['Inter', '"PingFang SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', '"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
+
+      // === 圆角（告别零圆角，引入现代柔和形态） ===
+      borderRadius: {
+        sm: '6px',
+        DEFAULT: '8px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+      },
+
+      // === 颜色（双主题 token；通过 CSS 变量切换） ===
+      // dark 是默认值；light 在 globals.css 里通过 :root 重写
       colors: {
-        surface: {
-          DEFAULT: '#141414',
-          light: '#1a1a1a',
-          dark: '#0d0d0d',
+        // 背景层级
+        base: 'rgb(var(--bg-base) / <alpha-value>)',
+        card: 'rgb(var(--bg-card) / <alpha-value>)',
+        elevated: 'rgb(var(--bg-elevated) / <alpha-value>)',
+        input: 'rgb(var(--bg-input) / <alpha-value>)',
+
+        // 边框
+        subtle: 'rgb(var(--border-subtle) / <alpha-value>)',
+        line: 'rgb(var(--border-default) / <alpha-value>)',
+
+        // 文字
+        primary: 'rgb(var(--text-primary) / <alpha-value>)',
+        secondary: 'rgb(var(--text-secondary) / <alpha-value>)',
+        tertiary: 'rgb(var(--text-tertiary) / <alpha-value>)',
+
+        // 品牌（紫色）
+        brand: {
+          DEFAULT: 'rgb(var(--brand) / <alpha-value>)',
+          hover: 'rgb(var(--brand-hover) / <alpha-value>)',
+          soft: 'rgb(var(--brand) / 0.12)',
         },
-        edge: {
-          DEFAULT: '#222222',
-          light: '#2a2a2a',
-          dark: '#1a1a1a',
-        },
-        muted: {
-          DEFAULT: '#666666',
-          light: '#888888',
-          dark: '#444444',
-        },
-        accent: {
-          DEFAULT: '#00e5ff',
-          dim: '#00b8d4',
-          glow: 'rgba(0, 229, 255, 0.12)',
-        },
+
+        // 状态（涨 / 跌 / 警告）
+        success: 'rgb(var(--success) / <alpha-value>)',
+        danger: 'rgb(var(--danger) / <alpha-value>)',
+        warning: 'rgb(var(--warning) / <alpha-value>)',
       },
+
+      // === 阴影（dark 几乎不用；light 用低饱和软阴影） ===
+      boxShadow: {
+        card: '0 1px 3px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.02)',
+        elevated: '0 4px 12px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04)',
+        focus: '0 0 0 3px rgb(124 58 237 / 0.25)',
+      },
+
+      // === 动画（保留 pulse-slow） ===
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'scan': 'scan 8s linear infinite',
-        'float-slow': 'float-slow 20s ease-in-out infinite',
-        'float-slow-reverse': 'float-slow-reverse 25s ease-in-out infinite',
-      },
-      keyframes: {
-        scan: {
-          '0%': { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(100%)' },
-        },
-        'float-slow': {
-          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
-          '33%': { transform: 'translate(30px, -20px) scale(1.05)' },
-          '66%': { transform: 'translate(-20px, 15px) scale(0.95)' },
-        },
-        'float-slow-reverse': {
-          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
-          '33%': { transform: 'translate(-25px, 20px) scale(0.95)' },
-          '66%': { transform: 'translate(15px, -25px) scale(1.05)' },
-        },
       },
     },
   },
   plugins: [],
-}
+};
