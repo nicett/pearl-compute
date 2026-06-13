@@ -40,6 +40,25 @@ function toBigIntSafe(v: unknown): bigint | null {
   }
 }
 
+/** 抽取 stats 子集，去除矿池层面的统计（roundScore 等） */
+function trimStats(stats: Record<string, unknown>): Record<string, unknown> {
+  return {
+    hashrate: stats.hashrate ?? 0,
+    hashrate_1h: stats.hashrate_1h ?? 0,
+    hashrate_6h: stats.hashrate_6h ?? 0,
+    hashrate_24h: stats.hashrate_24h ?? 0,
+    balance: stats.balance ?? '0',
+    paid: stats.paid ?? '0',
+    payments_24h: stats.payments_24h ?? 0,
+    payments_7d: stats.payments_7d ?? 0,
+    shares_good: stats.shares_good ?? 0,
+    shares_invalid: stats.shares_invalid ?? 0,
+    shares_stale: stats.shares_stale ?? 0,
+    networkHeight: stats.networkHeight ?? 0,
+    lastShare: stats.lastShare ?? null,
+  };
+}
+
 /** 抽取要存的 worker 子集，去冗余字段（agent / lastJobDifficulty 等） */
 function trimWorkers(workers: unknown): unknown[] {
   if (!Array.isArray(workers)) return [];
@@ -79,10 +98,10 @@ export const herominersFetcher: MinerFetcher = {
       (w: Record<string, unknown>) => typeof w.hashrate === 'number' && (w.hashrate as number) > 0,
     ).length;
 
-    // 裁剪 rawJson：丢掉 charts（时序数据，超大）和 payments（已有更聚合的 stats）
-    const { charts: _c, payments: _p, ...trimmed } = body;
+    // rawJson 仅保留用户层面字段，丢掉矿池级 unconfirmed / unlocked / charts / payments 等
+    // 目标单条 < 2KB（11.7KB → ~1KB）
     const rawJson = {
-      ...trimmed,
+      stats: trimStats(stats),
       workers: trimWorkers(workers),
     };
 
