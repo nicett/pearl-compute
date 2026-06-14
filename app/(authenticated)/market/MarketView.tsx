@@ -112,7 +112,7 @@ export default function MarketView() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-4">
         {/* 左：周期选择 + 蜡烛图 */}
         <div className="rounded-lg border bg-card">
           <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-b">

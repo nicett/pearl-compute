@@ -12,23 +12,19 @@ interface DepthData {
 
 interface Props {
   depth: DepthData | null;
-  /** 中间价用 ticker.price，比 (best ask + best bid) / 2 更稳定 */
+  /** 中间价用 ticker.price 比 (best ask + best bid) / 2 更稳定 */
   midPrice?: number | null;
-  /** 显示档位数（默认 12，避免页面太长） */
+  /** 每边显示行数（默认 12） */
   rows?: number;
 }
 
 interface Row {
   price: number;
   amount: number;
-  cumAmount: number;
   cumPercent: number;
 }
 
-/** 从原始 [price, amount] 字符串数组构造可显示行：
- * - 按价格排序（asks 升序、bids 降序）
- * - 累计深度（用于阶梯条宽度）
- */
+/** 从原始 [price, amount] 构造行：排序 + 累计深度（用于阶梯条） */
 function buildRows(raw: Array<[string, string]>, ascending: boolean, take: number): Row[] {
   if (!raw || raw.length === 0) return [];
   const parsed = raw
@@ -42,8 +38,8 @@ function buildRows(raw: Array<[string, string]>, ascending: boolean, take: numbe
   return sliced.map((r) => {
     cum += r.amount;
     return {
-      ...r,
-      cumAmount: cum,
+      price: r.price,
+      amount: r.amount,
       cumPercent: total > 0 ? (cum / total) * 100 : 0,
     };
   });
@@ -59,9 +55,18 @@ function fmtAmount(n: number): string {
   return n.toFixed(2);
 }
 
+/**
+ * 订单簿 — 市场深度布局
+ *
+ * 左侧 bids（买单，绿色，价高→低），右侧 asks（卖单，红色，价低→高），
+ * 顶部展示中间价。阶梯背景条按累计深度，bids 向右伸展、asks 向左伸展，
+ * 形成对称的视觉密度图。
+ */
 export default function OrderBook({ depth, midPrice, rows = 12 }: Props) {
-  const asks = useMemo(() => buildRows(depth?.asks ?? [], true, rows), [depth?.asks, rows]);
+  // bids: 价格降序（最近的买价在最上）
   const bids = useMemo(() => buildRows(depth?.bids ?? [], false, rows), [depth?.bids, rows]);
+  // asks: 价格升序（最近的卖价在最上）
+  const asks = useMemo(() => buildRows(depth?.asks ?? [], true, rows), [depth?.asks, rows]);
 
   if (!depth) {
     return (
@@ -73,59 +78,98 @@ export default function OrderBook({ depth, midPrice, rows = 12 }: Props) {
   }
 
   const mid = midPrice ?? (asks[0] && bids[0] ? (asks[0].price + bids[0].price) / 2 : null);
+  const spread =
+    asks[0] && bids[0]
+      ? {
+          abs: asks[0].price - bids[0].price,
+          pct: ((asks[0].price - bids[0].price) / asks[0].price) * 100,
+        }
+      : null;
 
   return (
     <div className="rounded-lg border bg-card flex flex-col">
-      <div className="px-5 py-3 border-b">
-        <h3 className="text-sm font-semibold">订单簿</h3>
+      {/* 头部：中间价 + 价差 */}
+      <div className="px-4 py-3 border-b">
+        <h3 className="text-sm font-semibold mb-1">订单簿</h3>
+        {mid != null && (
+          <div className="flex items-center gap-3">
+            <span className="text-base font-mono font-bold">{fmtPrice(mid)}</span>
+            <span className="text-[10px] text-muted-foreground">中间价</span>
+            {spread && spread.abs > 0 && (
+              <span className="ml-auto text-[10px] text-muted-foreground font-mono">
+                价差 {spread.abs.toFixed(4)} ({spread.pct.toFixed(2)}%)
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 表头 */}
-      <div className="grid grid-cols-[1fr_1fr] px-3 py-2 text-[10px] text-muted-foreground border-b">
-        <span>价格 (USDT)</span>
-        <span className="text-right">数量 (PRL)</span>
-      </div>
-
-      {/* asks（从远到近，由上到下） */}
-      <div className="flex flex-col-reverse">
-        {asks.map((r) => (
-          <DepthRow key={`a-${r.price}`} row={r} side="ask" />
-        ))}
-      </div>
-
-      {/* mid price */}
-      {mid != null && (
-        <div className="flex items-center justify-center gap-2 px-3 py-2 border-y bg-muted/30">
-          <span className="text-base font-mono font-semibold">{fmtPrice(mid)}</span>
-          <span className="text-[10px] text-muted-foreground">中间价</span>
+      {/* 列头 */}
+      <div className="grid grid-cols-2 px-3 py-2 text-[10px] text-muted-foreground border-b">
+        <div className="grid grid-cols-2">
+          <span>买价</span>
+          <span className="text-right">数量</span>
         </div>
-      )}
+        <div className="grid grid-cols-2 pl-3">
+          <span>卖价</span>
+          <span className="text-right">数量</span>
+        </div>
+      </div>
 
-      {/* bids */}
-      <div className="flex flex-col">
-        {bids.map((r) => (
-          <DepthRow key={`b-${r.price}`} row={r} side="bid" />
-        ))}
+      {/* 主体：左 bids / 右 asks */}
+      <div className="grid grid-cols-2">
+        {/* bids（左） */}
+        <ul>
+          {bids.length === 0 ? (
+            <li className="px-3 py-3 text-center text-xs text-muted-foreground">暂无</li>
+          ) : (
+            bids.map((r) => <BidRow key={`b-${r.price}`} row={r} />)
+          )}
+        </ul>
+
+        {/* asks（右） */}
+        <ul className="border-l">
+          {asks.length === 0 ? (
+            <li className="px-3 py-3 text-center text-xs text-muted-foreground">暂无</li>
+          ) : (
+            asks.map((r) => <AskRow key={`a-${r.price}`} row={r} />)
+          )}
+        </ul>
       </div>
     </div>
   );
 }
 
-function DepthRow({ row, side }: { row: Row; side: 'ask' | 'bid' }) {
-  const colorClass = side === 'ask' ? 'text-destructive' : 'text-success';
-  const barClass = side === 'ask' ? 'bg-destructive/10' : 'bg-success/10';
-  const barAlign = side === 'ask' ? 'left-0' : 'right-0';
-
+function BidRow({ row }: { row: Row }) {
   return (
-    <div className="relative grid grid-cols-[1fr_1fr] px-3 py-1 text-xs font-mono hover:bg-muted/30 transition-colors">
-      {/* 阶梯背景条 */}
+    <li className="relative grid grid-cols-2 px-3 py-1 text-xs font-mono hover:bg-muted/30 transition-colors">
+      {/* 阶梯条：从右向左延伸（向中线方向，bids 在左侧） */}
       <div
         aria-hidden
-        className={cn('absolute inset-y-0', barAlign, barClass)}
+        className={cn(
+          'absolute inset-y-0 right-0 bg-success/10 pointer-events-none',
+        )}
         style={{ width: `${Math.min(row.cumPercent, 100)}%` }}
       />
-      <span className={cn('relative', colorClass)}>{fmtPrice(row.price)}</span>
-      <span className="relative text-right text-muted-foreground">{fmtAmount(row.amount)}</span>
-    </div>
+      <span className="relative text-success">{fmtPrice(row.price)}</span>
+      <span className="relative text-right text-foreground">{fmtAmount(row.amount)}</span>
+    </li>
+  );
+}
+
+function AskRow({ row }: { row: Row }) {
+  return (
+    <li className="relative grid grid-cols-2 px-3 py-1 text-xs font-mono hover:bg-muted/30 transition-colors">
+      {/* 阶梯条：从左向右延伸（向中线方向，asks 在右侧） */}
+      <div
+        aria-hidden
+        className={cn(
+          'absolute inset-y-0 left-0 bg-destructive/10 pointer-events-none',
+        )}
+        style={{ width: `${Math.min(row.cumPercent, 100)}%` }}
+      />
+      <span className="relative text-destructive">{fmtPrice(row.price)}</span>
+      <span className="relative text-right text-foreground">{fmtAmount(row.amount)}</span>
+    </li>
   );
 }
