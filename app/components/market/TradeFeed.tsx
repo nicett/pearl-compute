@@ -41,6 +41,9 @@ function fmtTime(iso: string): string {
   }
 }
 
+// 共享列模板：3 等分。表头与数据行都用同一套，确保对齐
+const ROW_GRID = 'grid grid-cols-3 gap-2';
+
 export default function TradeFeed({ trades, limit = 30 }: Props) {
   if (!trades) {
     return (
@@ -59,10 +62,10 @@ export default function TradeFeed({ trades, limit = 30 }: Props) {
         <h3 className="text-sm font-semibold">最近成交</h3>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr_auto] px-3 py-2 text-[10px] text-muted-foreground border-b">
+      <div className={cn(ROW_GRID, 'px-3 py-2 text-[10px] text-muted-foreground border-b')}>
         <span>价格 (USDT)</span>
         <span className="text-right">数量 (PRL)</span>
-        <span className="text-right pl-3">时间</span>
+        <span className="text-right">时间</span>
       </div>
 
       <ul className="divide-y">
@@ -72,13 +75,16 @@ export default function TradeFeed({ trades, limit = 30 }: Props) {
           list.map((t) => (
             <li
               key={t.id}
-              className="grid grid-cols-[1fr_1fr_auto] px-3 py-1.5 text-xs font-mono hover:bg-muted/30 transition-colors"
+              className={cn(
+                ROW_GRID,
+                'px-3 py-1.5 text-xs font-mono hover:bg-muted/30 transition-colors',
+              )}
             >
               <span className={cn(t.side === 'buy' ? 'text-success' : 'text-destructive')}>
                 {fmtPrice(t.price)}
               </span>
-              <span className="text-right text-muted-foreground">{fmtAmount(t.amount)}</span>
-              <span className="text-right pl-3 text-muted-foreground/70">
+              <span className="text-right text-foreground">{fmtAmount(t.amount)}</span>
+              <span className="text-right text-muted-foreground/70">
                 {fmtTime(t.createdAt)}
               </span>
             </li>
