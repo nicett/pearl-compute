@@ -40,6 +40,24 @@ export interface KlinePoint {
   volume: number;
 }
 
+/** SafeTrade 订单簿快照 */
+export interface DepthData {
+  asks: Array<[string, string]>;  // [price, amount]，按价格升序（卖一在最前）
+  bids: Array<[string, string]>;  // [price, amount]，按价格降序（买一在最前）
+  sequence: number | null;
+  fetchedAt: number;              // ms 时间戳
+}
+
+/** SafeTrade 单笔成交 */
+export interface TradeRow {
+  id: number;
+  price: number;
+  amount: number;
+  total: number;
+  side: 'buy' | 'sell';
+  createdAt: string;              // ISO
+}
+
 export interface AssembledStatsData {
   coins: Array<{ price?: number }>;
   prices: {
@@ -126,7 +144,83 @@ export async function fetchSafetradePrice(): Promise<PriceData | null> {
   }
 }
 
-/** OKX Web3 — WPRL 价格（HTML 抓取） */
+/** SafeTrade 订单簿 — asks (卖) + bids (买)，limit 双向各 50 档 */
+export async function fetchSafetradeDepth(): Promise<DepthData | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(
+      'https://safe.trade/api/v2/trade/public/markets/prlusdt/depth?limit=50',
+      {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/json',
+        },
+      },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.asks) || !Array.isArray(data.bids)) return null;
+    return {
+      asks: data.asks as Array<[string, string]>,
+      bids: data.bids as Array<[string, string]>,
+      sequence: typeof data.sequence === 'number' ? data.sequence : null,
+      fetchedAt: Date.now(),
+    };
+  } catch (e) {
+    if (process.env.NODE_ENV !== 'production') console.warn('[fetchSafetradeDepth]', e);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** SafeTrade 最近成交 — 50 笔 */
+export async function fetchSafetradeTrades(): Promise<TradeRow[] | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(
+      'https://safe.trade/api/v2/trade/public/markets/prlusdt/trades?limit=50',
+      {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/json',
+        },
+      },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data)) return null;
+    return data
+      .map((t: Record<string, unknown>): TradeRow | null => {
+        const id = typeof t.id === 'number' ? t.id : null;
+        const price = parseFloat(t.price as string);
+        const amount = parseFloat(t.amount as string);
+        const total = parseFloat(t.total as string);
+        const side = t.side as string;
+        const createdAt = t.created_at as string;
+        if (id == null || !Number.isFinite(price) || !Number.isFinite(amount)) return null;
+        if (side !== 'buy' && side !== 'sell') return null;
+        return {
+          id,
+          price,
+          amount,
+          total: Number.isFinite(total) ? total : price * amount,
+          side,
+          createdAt: createdAt || new Date().toISOString(),
+        };
+      })
+      .filter((t): t is TradeRow => t !== null);
+  } catch (e) {
+    if (process.env.NODE_ENV !== 'production') console.warn('[fetchSafetradeTrades]', e);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 export async function fetchOkxPrice(): Promise<PriceData | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);

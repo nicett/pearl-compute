@@ -11,7 +11,7 @@ import { authConfig } from '@/auth.config';
 
 const { auth } = NextAuth(authConfig);
 
-const PROTECTED_PREFIXES = ['/dashboard', '/miners', '/alerts', '/settings'];
+const PROTECTED_PREFIXES = ['/dashboard', '/miners', '/market', '/alerts', '/settings'];
 
 export default auth((req) => {
   const { pathname, search } = req.nextUrl;

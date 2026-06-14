@@ -15,7 +15,8 @@
     "../app/lib/db.ts",
     "../app/lib/pools/**/*.ts",
     "../app/lib/validators/**/*.ts",
-    "../app/lib/data-sources.ts"
+    "../app/lib/data-sources.ts",
+    "../app/lib/market-cache.ts"
   ],
   "exclude": ["dist", "node_modules"]
 }

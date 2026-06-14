@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calculator, Pickaxe, Moon, Sun, Monitor } from 'lucide-react';
+import { Calculator, Pickaxe, LineChart, Moon, Sun, Monitor } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { UserMenu } from './UserMenu';
 const NAV_ITEMS = [
   { href: '/dashboard', label: '计算器', icon: Calculator },
   { href: '/miners', label: '矿工', icon: Pickaxe },
+  { href: '/market', label: '行情', icon: LineChart },
 ];
 
 /**
