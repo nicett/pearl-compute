@@ -9,6 +9,7 @@
  * 当前注册的定时任务：
  * - miner-sync       每 5 分钟    拉所有矿工绑定的实时数据
  * - market-sync      每 5 秒      拉 safe.trade 行情（depth/trades/ticker）写 Redis
+ * - kline-sync       每 60 秒     拉 safe.trade 7 个周期的 K 线写 Redis
  * - snapshot-prune   每 24 小时   降采样旧 snapshot（防数据库爆）
  */
 import 'dotenv/config';
@@ -17,10 +18,12 @@ import { Queue, Worker } from 'bullmq';
 import { bullmqConnection } from './lib/redis';
 import { runMinerSync } from './jobs/miner-sync';
 import { runMarketSync } from './jobs/market-sync';
+import { runKlineSync } from './jobs/kline-sync';
 import { runSnapshotPrune } from './jobs/snapshot-prune';
 
 const MINER_SYNC_INTERVAL_MS = 5 * 60_000;        // 5 分钟
 const MARKET_SYNC_INTERVAL_MS = 5_000;             // 5 秒
+const KLINE_SYNC_INTERVAL_MS = 60_000;             // 60 秒（7 个周期 × 60s ≈ 0.12 RPS）
 const SNAPSHOT_PRUNE_INTERVAL_MS = 24 * 60 * 60_000; // 24 小时
 
 /** 注册 / 重置一个 repeat job —— 清掉旧的，加新的 */
@@ -72,6 +75,22 @@ async function main() {
   // 启动后立即跑一次 market-sync（不等 5s）
   await marketQueue.add('boot', {}, { removeOnComplete: true });
 
+  // ── kline-sync ──
+  const klineQueue = new Queue('kline-sync', { connection: bullmqConnection });
+  await registerRepeatable(klineQueue, 'tick', KLINE_SYNC_INTERVAL_MS, 'kline-sync-repeat');
+
+  const klineWorker = new Worker('kline-sync', runKlineSync, {
+    connection: bullmqConnection,
+    concurrency: 1,
+  });
+
+  klineWorker.on('failed', (job, err) => {
+    console.error(`[worker:kline-sync] job ${job?.id} failed:`, err.message);
+  });
+
+  // 启动后立即跑一次 kline-sync（不等 60s）
+  await klineQueue.add('boot', {}, { removeOnComplete: true });
+
   // ── snapshot-prune ──
   const pruneQueue = new Queue('snapshot-prune', { connection: bullmqConnection });
   await registerRepeatable(pruneQueue, 'tick', SNAPSHOT_PRUNE_INTERVAL_MS, 'snapshot-prune-repeat');
@@ -91,6 +110,7 @@ async function main() {
   console.log(
     `[worker] up — miner-sync every ${MINER_SYNC_INTERVAL_MS / 1000}s, ` +
     `market-sync every ${MARKET_SYNC_INTERVAL_MS / 1000}s, ` +
+    `kline-sync every ${KLINE_SYNC_INTERVAL_MS / 1000}s, ` +
     `snapshot-prune every ${SNAPSHOT_PRUNE_INTERVAL_MS / 3600_000}h`,
   );
 
@@ -100,9 +120,11 @@ async function main() {
     await Promise.allSettled([
       minerSyncWorker.close(),
       marketWorker.close(),
+      klineWorker.close(),
       pruneWorker.close(),
       minerSyncQueue.close(),
       marketQueue.close(),
+      klineQueue.close(),
       pruneQueue.close(),
     ]);
     process.exit(0);

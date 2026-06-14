@@ -12,14 +12,17 @@
  */
 import Redis from 'ioredis';
 
-import type { DepthData, PriceData, TradeRow } from './data-sources';
+import type { DepthData, KlinePoint, PriceData, TradeRow } from './data-sources';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 const TTL_SEC = 30;
+/** K 线缓存 TTL：所有周期都给 10 分钟，足够 worker 60s 节奏覆盖 */
+const KLINE_TTL_SEC = 600;
 
 const KEY_DEPTH = 'pearl:market:depth';
 const KEY_TRADES = 'pearl:market:trades';
 const KEY_TICKER = 'pearl:market:ticker';
+const klineKey = (period: number) => `pearl:kline:${period}`;
 
 let client: Redis | null = null;
 let unavailable = false;
@@ -118,5 +121,39 @@ export async function getMarketSnapshot(): Promise<MarketSnapshot> {
   } catch (e) {
     console.warn('[market-cache:get] read failed:', e instanceof Error ? e.message : e);
     return { depth: null, trades: null, ticker: null, syncedAt: null };
+  }
+}
+
+// ── K 线缓存 ──
+
+/** worker 调用：写指定周期的 K 线到 Redis */
+export async function setKlineCache(period: number, klines: KlinePoint[]): Promise<void> {
+  const redis = getClient();
+  if (!redis) return;
+  try {
+    await redis.set(klineKey(period), JSON.stringify(klines), 'EX', KLINE_TTL_SEC);
+  } catch (e) {
+    console.warn(
+      `[market-cache:setKline] period=${period} failed:`,
+      e instanceof Error ? e.message : e,
+    );
+  }
+}
+
+/** Next.js route 调用：读指定周期的 K 线；不存在返回 null */
+export async function getKlineCache(period: number): Promise<KlinePoint[] | null> {
+  const redis = getClient();
+  if (!redis) return null;
+  try {
+    const raw = await redis.get(klineKey(period));
+    if (!raw) return null;
+    const data = JSON.parse(raw) as KlinePoint[];
+    return Array.isArray(data) ? data : null;
+  } catch (e) {
+    console.warn(
+      `[market-cache:getKline] period=${period} failed:`,
+      e instanceof Error ? e.message : e,
+    );
+    return null;
   }
 }

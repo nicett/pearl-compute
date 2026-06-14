@@ -1,19 +1,24 @@
 /**
- * 行情页 — 客户端组件，5s 轮询 /api/market/snapshot
+ * 行情页 — 客户端组件
  *
- * 三栏：左大块 K 线 + 右上订单簿 + 右下成交流水
- * K 线复用 PriceChart 组件（已有的 lightweight-charts 实现）
+ * 数据流：
+ * - /api/market/snapshot 5s 轮询：depth / trades / ticker
+ * - /api/chart?period=N 30s 轮询：当前周期 K 线
+ *
+ * 周期切换：客户端 setState 触发 K 线重新拉取
  */
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 
 import OrderBook from '@/app/components/market/OrderBook';
-import PriceChart from '@/app/components/PriceChart';
 import PriceTicker from '@/app/components/market/PriceTicker';
 import TradeFeed from '@/app/components/market/TradeFeed';
+import CandlestickChart, {
+  type KlinePoint,
+} from '@/app/components/market/CandlestickChart';
+import PeriodSelector from '@/app/components/market/PeriodSelector';
 import { useTheme } from '@/app/theme/context';
-import type { PriceHistoryPoint } from '@/app/types';
 
 interface MarketSnapshot {
   depth: {
@@ -39,28 +44,21 @@ interface MarketSnapshot {
   syncedAt: number | null;
 }
 
-interface ChartData {
-  source: string;
-  period: number;
-  data: Array<{
-    time: number;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-  }>;
-}
-
-const POLL_INTERVAL_MS = 5_000;
+const SNAPSHOT_INTERVAL_MS = 5_000;
+const KLINE_INTERVAL_MS = 30_000;
+const DEFAULT_PERIOD = 15;
 
 export default function MarketView() {
   const { resolvedTheme } = useTheme();
+
   const [snapshot, setSnapshot] = useState<MarketSnapshot | null>(null);
-  const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
+  const [klines, setKlines] = useState<KlinePoint[]>([]);
+  const [period, setPeriod] = useState<number>(DEFAULT_PERIOD);
+  const [klineLoading, setKlineLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
+  // ── snapshot 轮询 ──
+  const reloadSnapshot = useCallback(async () => {
     try {
       const res = await fetch('/api/market/snapshot', { credentials: 'same-origin' });
       if (!res.ok) {
@@ -75,56 +73,37 @@ export default function MarketView() {
     }
   }, []);
 
-  // 拉 K 线（复用 /api/chart） — 频率较低（30s），因为 K 线是 15min 周期
-  const reloadChart = useCallback(async () => {
+  useEffect(() => {
+    reloadSnapshot();
+    const t = setInterval(reloadSnapshot, SNAPSHOT_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, [reloadSnapshot]);
+
+  // ── K 线轮询（依赖 period） ──
+  const reloadKlines = useCallback(async (p: number, showLoading: boolean) => {
+    if (showLoading) setKlineLoading(true);
     try {
-      const res = await fetch('/api/chart', { credentials: 'same-origin' });
+      const res = await fetch(`/api/chart?period=${p}`, { credentials: 'same-origin' });
       if (!res.ok) return;
-      const data = (await res.json()) as ChartData;
-      if (!data.data || !Array.isArray(data.data)) return;
-      // PriceHistoryPoint 用 close 作 price + 完整 OHLC
-      const points: PriceHistoryPoint[] = data.data.map((c) => ({
-        ts: c.time,
-        price: c.close,
-        volume: c.volume ?? null,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-      }));
-      setPriceHistory(points);
+      const data = (await res.json()) as { data?: KlinePoint[] };
+      if (Array.isArray(data.data)) setKlines(data.data);
     } catch {
-      // 静默失败
+      // 静默失败；保留旧数据
+    } finally {
+      if (showLoading) setKlineLoading(false);
     }
   }, []);
 
-  // 5s 轮询 snapshot
   useEffect(() => {
-    reload();
-    const timer = setInterval(reload, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [reload]);
-
-  // 30s 轮询 K 线
-  useEffect(() => {
-    reloadChart();
-    const timer = setInterval(reloadChart, 30_000);
-    return () => clearInterval(timer);
-  }, [reloadChart]);
-
-  // 简易 t 函数 —— 复用 PriceChart 需要 t 参数（先用静态字符串）
-  const t = useCallback((key: string) => {
-    const map: Record<string, string> = {
-      priceTrend: 'PRL/USDT 走势',
-      priceTrendDesc: '15 分钟周期，过去 24 小时',
-      loading: '加载中…',
-    };
-    return map[key] ?? key;
-  }, []);
+    // 切周期时清空旧数据 + 显示加载
+    setKlines([]);
+    reloadKlines(period, true);
+    const t = setInterval(() => reloadKlines(period, false), KLINE_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, [period, reloadKlines]);
 
   return (
     <div className="space-y-4">
-      {/* 顶部 ticker */}
       <PriceTicker ticker={snapshot?.ticker ?? null} syncedAt={snapshot?.syncedAt ?? null} />
 
       {error && (
@@ -133,15 +112,21 @@ export default function MarketView() {
         </div>
       )}
 
-      {/* 三栏：左大块 K 线 + 右两个堆叠的小面板 */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
-        {/* 左：K 线 */}
-        <div className="rounded-lg border bg-card p-5">
-          <PriceChart
-            priceHistory={priceHistory}
-            resolvedTheme={resolvedTheme}
-            t={t}
-          />
+        {/* 左：周期选择 + 蜡烛图 */}
+        <div className="rounded-lg border bg-card">
+          <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-b">
+            <h3 className="text-sm font-semibold">PRL/USDT K 线</h3>
+            <PeriodSelector value={period} onChange={setPeriod} />
+          </div>
+          <div className="p-2">
+            <CandlestickChart
+              klines={klines}
+              resolvedTheme={resolvedTheme}
+              loadingText={klineLoading ? '加载中…' : '暂无数据'}
+              height={460}
+            />
+          </div>
         </div>
 
         {/* 右：订单簿 + 成交流 */}

@@ -384,15 +384,31 @@ export async function assembleStatsData(): Promise<AssembledStatsData | null> {
 
 // ── K 线数据 ──
 
-/** SafeTrade K 线 + 前向填充 */
-export async function fetchSafeTradeKlines(): Promise<KlinePoint[] | null> {
+/** SafeTrade 支持的 K 线周期（分钟） */
+export const KLINE_PERIODS = [1, 5, 15, 60, 240, 1440, 10080] as const;
+export type KlinePeriod = typeof KLINE_PERIODS[number];
+
+/**
+ * SafeTrade K 线 + 前向填充
+ * @param period 分钟为单位 (1/5/15/60/240/1440/10080)，默认 15
+ */
+export async function fetchSafeTradeKlines(period: number = 15): Promise<KlinePoint[] | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
+    const periodSec = period * 60;
     const timeTo = Math.floor(Date.now() / 1000);
-    const timeFrom = timeTo - 86400; // 24小时前
+    // 时间窗口按周期定：短周期短窗口，长周期长窗口
+    // 目标：窗口 / 周期 ≈ 200~500 根 K 线
+    const windowSec =
+      period >= 1440 ? 365 * 86400          // 1d/1w：1 年
+      : period >= 60 ? 30 * 86400            // 1h/4h：30 天
+      : period >= 15 ? 5 * 86400             // 15m：5 天
+      : period >= 5 ? 86400                  // 5m：1 天
+      : 6 * 3600;                            // 1m：6 小时
+    const timeFrom = timeTo - windowSec;
 
-    const url = `https://safe.trade/api/v2/trade/public/markets/prlusdt/k-line?period=15&limit=500&time_from=${timeFrom}&time_to=${timeTo}`;
+    const url = `https://safe.trade/api/v2/trade/public/markets/prlusdt/k-line?period=${period}&limit=500&time_from=${timeFrom}&time_to=${timeTo}`;
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
@@ -406,18 +422,21 @@ export async function fetchSafeTradeKlines(): Promise<KlinePoint[] | null> {
     if (data.length === 0) return [];
 
     // Peatio K-line: [ts(秒), open, high, low, close, volume]
-    const fetchedKlines: KlinePoint[] = data.map((k: unknown[]) => ({
-      time: parseInt(k[0] as string),
-      open: parseFloat(k[1] as string),
-      high: parseFloat(k[2] as string),
-      low: parseFloat(k[3] as string),
-      close: parseFloat(k[4] as string),
-      volume: parseFloat(k[5] as string),
-    })).sort((a, b) => a.time - b.time);
+    const fetchedKlines: KlinePoint[] = data
+      .map((k: unknown[]) => ({
+        time: parseInt(k[0] as string),
+        open: parseFloat(k[1] as string),
+        high: parseFloat(k[2] as string),
+        low: parseFloat(k[3] as string),
+        close: parseFloat(k[4] as string),
+        volume: parseFloat(k[5] as string),
+      }))
+      .filter((k) => Number.isFinite(k.open) && Number.isFinite(k.close))
+      .sort((a, b) => a.time - b.time);
 
     if (fetchedKlines.length === 0) return [];
 
-    return forwardFillKlines(fetchedKlines, timeFrom, timeTo, 15 * 60);
+    return forwardFillKlines(fetchedKlines, timeFrom, timeTo, periodSec);
   } catch (e) {
     if (process.env.NODE_ENV !== 'production') console.warn('[fetchSafeTradeKlines]', e);
     return null;
