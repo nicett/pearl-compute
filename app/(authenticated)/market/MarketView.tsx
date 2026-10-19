@@ -116,7 +116,7 @@ export default function MarketView() {
         {/* 左：周期选择 + 蜡烛图 */}
         <div className="rounded-lg border bg-card">
           <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-b">
-            <h3 className="text-sm font-semibold">PRL/USDT K 线</h3>
+            <h3 className="text-sm font-semibold">PEARL/USDT K 线</h3>
             <PeriodSelector value={period} onChange={setPeriod} />
           </div>
           <div className="p-2">

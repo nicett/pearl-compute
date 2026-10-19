@@ -61,7 +61,7 @@ export default function PriceTicker({ ticker, syncedAt }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="text-base font-semibold">PRL/USDT</span>
+            <span className="text-base font-semibold">PEARL/USDT</span>
             <Badge variant="secondary" className="text-[10px]">SafeTrade</Badge>
             {stale && (
               <Badge variant="warning" className="text-[10px]">数据陈旧</Badge>
@@ -91,7 +91,7 @@ export default function PriceTicker({ ticker, syncedAt }: Props) {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <a
-              href="https://safe.trade/markets/PRL_USDT"
+              href="https://safe.trade/markets/PEARL_USDT"
               target="_blank"
               rel="noreferrer"
             >
@@ -105,7 +105,7 @@ export default function PriceTicker({ ticker, syncedAt }: Props) {
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
         <Stat label="24h 高" value={formatNum(ticker?.high)} tone="success" />
         <Stat label="24h 低" value={formatNum(ticker?.low)} tone="destructive" />
-        <Stat label="24h 量" value={`${formatVolume(ticker?.volume)} PRL`} />
+        <Stat label="24h 量" value={`${formatVolume(ticker?.volume)} PEARL`} />
         <Stat label="数据更新" value={formatAge(syncedAt)} />
       </div>
     </div>

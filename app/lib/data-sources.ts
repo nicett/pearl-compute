@@ -107,13 +107,13 @@ export async function fetchPrlPrice(): Promise<PriceData | null> {
   }
 }
 
-/** SafeTrade — PRL/USDT 最新价 */
+/** SafeTrade — PEARL/USDT 最新价 */
 export async function fetchSafetradePrice(): Promise<PriceData | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const response = await fetch(
-      'https://safe.trade/api/v2/trade/public/tickers/prlusdt',
+      'https://safe.trade/api/v2/trade/public/tickers/pearlusdt',
       {
         signal: controller.signal,
         headers: {
@@ -150,7 +150,7 @@ export async function fetchSafetradeDepth(): Promise<DepthData | null> {
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(
-      'https://safe.trade/api/v2/trade/public/markets/prlusdt/depth?limit=50',
+      'https://safe.trade/api/v2/trade/public/markets/pearlusdt/depth?limit=50',
       {
         signal: controller.signal,
         headers: {
@@ -182,7 +182,7 @@ export async function fetchSafetradeTrades(): Promise<TradeRow[] | null> {
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(
-      'https://safe.trade/api/v2/trade/public/markets/prlusdt/trades?limit=50',
+      'https://safe.trade/api/v2/trade/public/markets/pearlusdt/trades?limit=50',
       {
         signal: controller.signal,
         headers: {
@@ -408,7 +408,7 @@ export async function fetchSafeTradeKlines(period: number = 15): Promise<KlinePo
       : 6 * 3600;                            // 1m：6 小时
     const timeFrom = timeTo - windowSec;
 
-    const url = `https://safe.trade/api/v2/trade/public/markets/prlusdt/k-line?period=${period}&limit=500&time_from=${timeFrom}&time_to=${timeTo}`;
+    const url = `https://safe.trade/api/v2/trade/public/markets/pearlusdt/k-line?period=${period}&limit=500&time_from=${timeFrom}&time_to=${timeTo}`;
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
