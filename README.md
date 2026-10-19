@@ -71,10 +71,10 @@ __tests__/                # Jest 单元测试
 | 数据 | 数据源 | 备注 |
 |---|---|---|
 | PRL 价格（首选）| Pearl OTC `/api/stats/settlements` | 最新成交价 |
-| PRL 价格（备选）| SafeTrade `/api/v2/trade/public/tickers/prlusdt` | USDT 行情 |
+| PRL 价格（备选）| SafeTrade `/api/v2/trade/public/tickers/pearlusdt` | USDT 行情 |
 | PRL 价格（备选）| OKX Web3 行情 | 外部参考 |
 | 网络算力 / 出块 | PRLScan API | |
-| K 线历史 | SafeTrade `/api/v2/trade/public/markets/prlusdt/k-line` | 15min × 100 |
+| K 线历史 | SafeTrade `/api/v2/trade/public/markets/pearlusdt/k-line` | 15min × 100 |
 
 API 路由统一在 Edge Runtime 运行，并使用 `caches.default`（Cloudflare Edge Cache）做服务端缓存，TTL 见各路由顶部常量。
 

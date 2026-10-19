@@ -89,13 +89,13 @@ export async function fetchPrlPrice(): Promise<PriceData | null> {
   }
 }
 
-/** SafeTrade — PRL/USDT 最新价 */
+/** SafeTrade — PEARL/USDT 最新价 */
 export async function fetchSafetradePrice(): Promise<PriceData | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const response = await fetch(
-      'https://safe.trade/api/v2/trade/public/tickers/prlusdt',
+      'https://safe.trade/api/v2/trade/public/tickers/pearlusdt',
       {
         signal: controller.signal,
         headers: {
@@ -298,7 +298,7 @@ export async function fetchSafeTradeKlines(): Promise<KlinePoint[] | null> {
     const timeTo = Math.floor(Date.now() / 1000);
     const timeFrom = timeTo - 86400; // 24小时前
 
-    const url = `https://safe.trade/api/v2/trade/public/markets/prlusdt/k-line?period=15&limit=500&time_from=${timeFrom}&time_to=${timeTo}`;
+    const url = `https://safe.trade/api/v2/trade/public/markets/pearlusdt/k-line?period=15&limit=500&time_from=${timeFrom}&time_to=${timeTo}`;
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {

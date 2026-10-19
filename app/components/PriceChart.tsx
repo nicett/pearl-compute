@@ -223,7 +223,7 @@ export default function PriceChart({ priceHistory, resolvedTheme, t }: PriceChar
         <div ref={containerRef} className="w-full h-full" />
       </div>
       <p className="text-[10px] text-muted/30 text-center mt-2 tracking-wider uppercase">
-        PRL/USDT · {t('priceTrendDesc')}
+        PEARL/USDT · {t('priceTrendDesc')}
       </p>
     </div>
   );
